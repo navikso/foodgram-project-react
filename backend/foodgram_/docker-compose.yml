@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  food_postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=TestPassForTest
+      - IS_DOCKER=True
+    container_name: food_postgres
+    volumes:
+      - ~/.pg/pg_data/food:/var/lib/postgresql/data
+    env_file:
+      - .env
+    networks:
+      - mynetwork
+  foodgram_project:
+    image: foodgram:latest
+    container_name: foodgram_project
+    environment:
+      - IS_DOCKER=True
+    volumes:
+      - static_volume:/food/static
+      - media_volume:/food/media
+    depends_on:
+      - food_postgres
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    networks:
+      - mynetwork
+    command: >
+      bash -c "./manage.py collectstatic --noinput && ./manage.py migrate  && gunicorn -b 0.0.0.0:8080 conf.wsgi:application"
+  nginx:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./docker/nginx/
+    container_name: food_nginx
+    image: food_nginx
+    volumes:
+      - static_volume:/food/static
+      - media_volume:/food/media
+    depends_on:
+      - foodgram_project
+    ports:
+      - "${NGINX_EXTERNAL_PORT}:80"
+    networks:
+      - mynetwork
+
+volumes:
+  static_volume:
+  media_volume:
+
+networks:
+  mynetwork:
+    external: true

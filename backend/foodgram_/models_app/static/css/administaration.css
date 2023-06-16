@@ -1,0 +1,23 @@
+.button-change-pass-users {
+    display: inline-block;
+    background-color: var(--object-tools-bg);
+    border-radius: 15px;
+    padding: 3px 12px;
+    margin-bottom: 15px;
+}
+
+.button-change-pass-users a {
+    color: var(--object-tools-fg);
+    font-weight: 400;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.button-change-pass-users a:active, .button-change-pass-users a:focus{
+    text-decoration: none;
+}
+
+#id_user, #id_new_pass {
+    margin-bottom: 20px;
+}

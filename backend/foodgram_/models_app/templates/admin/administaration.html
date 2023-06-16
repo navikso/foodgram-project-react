@@ -1,0 +1,29 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+{% load i18n static %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'css/administaration.css' %}">
+{{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div>
+    <h1>Изменение пароля пользователя</h1>
+    <form action="." method="POST" enctype="multipart/form-data">
+        <p class="field-file">Выберите пользователя</p>
+        <select name="user" required="" id="id_user">
+            <option value="">---------</option>
+            {% for user in users %}
+                <option value="{{user.id}}" selected="">{{user.username}}</option>
+            {% endfor %}
+        </select>
+        <p class="field-file">Выберите новый пароль</p>
+        <input type="text" name="new_pass" class="vTextField" maxlength="150" id="id_new_pass">
+        {% csrf_token %}
+        <div class="submit-row">
+            <input type="submit" value="Изменить" name="_addanother">
+        </div>
+    </form>
+</div>
+{% endblock %}
