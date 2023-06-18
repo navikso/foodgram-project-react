@@ -12,11 +12,17 @@ class TagListView(APIView):
 
     def get(self, request, *args, **kwargs):
         outcome = ServiceOutcome(TagListService, {})
-        return Response(TagListSerializer(outcome.result, many=True).data, status=status.HTTP_200_OK)
+        return Response(
+            TagListSerializer(outcome.result, many=True).data,
+            status=status.HTTP_200_OK
+        )
 
 
 class TagGetView(APIView):
 
     def get(self, request, *args, **kwargs):
         outcome = ServiceOutcome(TagGetService, kwargs)
-        return Response(TagListSerializer(outcome.result).data, status=status.HTTP_200_OK)
+        return Response(
+            TagListSerializer(outcome.result).data,
+            status=status.HTTP_200_OK
+        )

@@ -3,11 +3,15 @@ from django.db import models
 
 
 class IngredientAmount(models.Model):
-    amount = models.PositiveSmallIntegerField(default=1,
-                                                validators=[MinValueValidator(0, 'Значение должно быть больше нуля')],
-                                                verbose_name='Количество ингредиентов',
-                                                )
-    ingredient = models.ForeignKey("Ingredient", on_delete=models.CASCADE, verbose_name='Ингридиент')
+    amount = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(0, 'Значение должно быть больше нуля')],
+        verbose_name='Количество ингредиентов',
+    )
+    ingredient = models.ForeignKey(
+        "Ingredient", on_delete=models.CASCADE,
+        verbose_name='Ингридиент'
+    )
 
     def __str__(self):
         return f"{self.amount} - {self.ingredient}"

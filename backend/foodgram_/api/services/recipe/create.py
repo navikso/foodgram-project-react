@@ -58,9 +58,14 @@ class RecipeCreateService(ServiceWithResult):
         list_ingredients = []
         for id_ingredient, amount in self._ingredients:
             try:
-                list_ingredients.append([Ingredient.objects.get(id=id_ingredient), amount])
+                list_ingredients.append(
+                    [Ingredient.objects.get(id=id_ingredient),
+                     amount]
+                )
             except ObjectDoesNotExist:
-                raise NotFound(message=f"Страница не найдена. (Ингредиента с id {id_ingredient} не найдено)")
+                raise NotFound(
+                    message=f"Ингредиент с id {id_ingredient} не найден.)"
+                )
         return list_ingredients
 
     @property
@@ -68,7 +73,9 @@ class RecipeCreateService(ServiceWithResult):
         try:
             return json.loads(self.cleaned_data["ingredients"])
         except JSONDecodeError:
-            raise ValidationError(message="Передайте корректный список ингредиентов")
+            raise ValidationError(
+                message="Передайте корректный список ингредиентов"
+            )
 
     @property
     def _tags(self):
@@ -77,5 +84,5 @@ class RecipeCreateService(ServiceWithResult):
             try:
                 list_tags.append(Tag.objects.get(id=id_tag))
             except ObjectDoesNotExist:
-                raise NotFound(message=f"Страница не найдена. (Тега с id {id_tag} не найдено)")
+                raise NotFound(message=f"Тег с id {id_tag} не найден.)")
         return list_tags

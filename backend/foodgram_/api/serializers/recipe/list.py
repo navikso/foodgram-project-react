@@ -6,4 +6,10 @@ from models_app.models import Recipe
 class RecipeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        fields = "__all__"
+        fields = (
+            "tags",
+            "name",
+            "image",
+            "text",
+            "cooking_time",
+        )

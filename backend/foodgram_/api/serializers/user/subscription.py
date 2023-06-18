@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from api.serializers.recipe.list_recipe_subs import SubscriptionRecipeListSerializer
+from api.serializers.recipe.list_recipe_subs import (
+    SubscriptionRecipeListSerializer
+)
 from models_app.models import User
 from models_app.models import Subscription
 from models_app.models import Recipe
@@ -16,10 +18,22 @@ class SubscriptionUserGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("email", "id", "username", "first_name", "last_name", "is_subscribed", "recipes", "recipes_count")
+        fields = (
+            "email",
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "is_subscribed",
+            "recipes",
+            "recipes_count"
+        )
 
     def get_recipes(self, obj):
-        return SubscriptionRecipeListSerializer(Recipe.objects.filter(user=obj), many=True).data
+        return SubscriptionRecipeListSerializer(
+            Recipe.objects.filter(user=obj),
+            many=True
+        ).data
 
     def get_is_subscribed(self, obj):
         subs = Subscription.objects.get(authors=obj)

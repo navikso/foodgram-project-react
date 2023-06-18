@@ -13,5 +13,3 @@ class IngredientGetService(ServiceWithResult):
     @property
     def _ingredient(self):
         return Ingredient.objects.get(id=self.cleaned_data["id"])
-
-

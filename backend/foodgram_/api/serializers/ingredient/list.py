@@ -3,6 +3,7 @@ from models_app.models import Ingredient
 
 
 class IngredientListSerializers(serializers.ModelSerializer):
+
     class Meta:
         model = Ingredient
-        fields = "__all__"
+        fields = ("name", "measurement_unit", )

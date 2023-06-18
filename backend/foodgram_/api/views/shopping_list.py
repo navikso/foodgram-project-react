@@ -9,5 +9,7 @@ from api.services.shopping_list.delete import ShoppingListDeleteService
 class ShoppingListDeleteView(APIView):
 
     def delete(self, request, *args, **kwargs):
-        ServiceOutcome(ShoppingListDeleteService, kwargs | {"user": request.user})
+        ServiceOutcome(
+            ShoppingListDeleteService, kwargs | {"user": request.user}
+        )
         return Response({}, status=status.HTTP_204_NO_CONTENT)

@@ -34,5 +34,7 @@ class FavoriteCreateService(ServiceWithResult):
     def recipe_presence(self):
         if not Recipe.objects.filter(id=self.cleaned_data["id"]).exists():
             raise ValidationError(message="Такого рецепта не существует")
-        if Favorites.objects.filter(recipe_id=self.cleaned_data["id"]).exists():
+        if Favorites.objects.filter(
+            recipe_id=self.cleaned_data["id"]
+        ).exists():
             raise ValidationError(message="Рецепт уже находится в избранном")

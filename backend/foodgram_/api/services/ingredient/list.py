@@ -12,4 +12,6 @@ class IngredientListService(ServiceWithResult):
 
     @property
     def _ingredients(self):
-        return Ingredient.objects.filter(name__startswith=self.cleaned_data["name"])
+        return Ingredient.objects.filter(
+            name__startswith=self.cleaned_data["name"]
+        )

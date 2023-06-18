@@ -7,7 +7,10 @@ from api.views.shopping_list import ShoppingListDeleteView
 from api.views.subscribe import SubscriptionCreateDeleteView
 from api.views.tag import TagListView, TagGetView
 from api.views.token import TokenGetView, TokenDeleteView
-from api.views.user import UserSetPasswordView, UserListCreateView, UserGetView, UserGetMeView
+from api.views.user import (
+    UserSetPasswordView, UserListCreateView,
+    UserGetView, UserGetMeView
+)
 
 urlpatterns = [
     path("ingredients/", IngredientListView.as_view()),

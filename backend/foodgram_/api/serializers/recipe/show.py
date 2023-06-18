@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from api.serializers.ingredientAmount.list import IngredientAmountListSerializer
+from api.serializers.ingredientAmount.list import (
+    IngredientAmountListSerializer
+)
 from api.serializers.tag.list import TagListSerializer
 from api.serializers.user.show import UserGetSerializer
 from models_app.models import Recipe
@@ -20,7 +22,7 @@ class RecipeShowSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "tags",
-            "user",
+            "author",
             "ingredients",
             "is_favorited",
             "is_in_shopping_cart",

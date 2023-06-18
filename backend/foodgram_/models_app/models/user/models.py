@@ -9,17 +9,23 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=150,
         help_text=_(
-            "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+            "Required 150 characters or fewer."
         ),
         error_messages={
             "unique": _("A user with that username already exists."),
         }, verbose_name="Username",
         unique=True,
     )
-    email = models.EmailField(max_length=255, unique=True, verbose_name="Почта")
+    email = models.EmailField(
+        max_length=255, unique=True, verbose_name="Почта"
+    )
     is_blocked = models.BooleanField(default=False, verbose_name="Блокировка")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Дата создания'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name='Дата обновления'
+    )
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []

@@ -28,4 +28,7 @@ class UserGetService(ServiceWithResult):
 
     def user_presence(self):
         if not self._user:
-            raise NotFound(message="Пользователь не найден.", response_status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(
+                message="Пользователь не найден.",
+                response_status=status.HTTP_404_NOT_FOUND
+            )

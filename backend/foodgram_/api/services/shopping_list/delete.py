@@ -41,8 +41,16 @@ class ShoppingListDeleteService(ServiceWithResult):
 
     def presence_shoppinglist(self):
         if not self._shoppinglist:
-            raise NotFound(message="Учетные данные не были предоставлены. (В корзине пусто)")
+            raise NotFound(
+                message=(
+                    "Учетные данные не были предоставлены. (В корзине пусто)"
+                )
+            )
 
     def presence_recipe(self):
         if not self._recipe:
-            raise NotFound(message="Учетные данные не были предоставлены. (Рецепт не найден)")
+            raise NotFound(
+                message=(
+                    "Учетные данные не были предоставлены. (Рецепт не найден)"
+                )
+            )

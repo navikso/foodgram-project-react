@@ -1,6 +1,5 @@
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework import status
 from service_objects.errors import NotFound, ForbiddenError
 from service_objects.fields import ModelField
 from service_objects.services import ServiceWithResult
@@ -35,4 +34,6 @@ class RecipeDeleteService(ServiceWithResult):
 
     def access_user(self):
         if self.cleaned_data["user"] != self._recipe.user:
-            raise ForbiddenError(message="У вас недостаточно прав для выполнения данного действия.")
+            raise ForbiddenError(
+                message="У вас недостаточно прав для данного действия."
+            )

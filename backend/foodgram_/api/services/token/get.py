@@ -16,5 +16,6 @@ class TokenGetService(ServiceWithResult):
     @property
     def _token(self):
         user = User.objects.get(email=self.cleaned_data["email"])
-        if user.check_password(self.cleaned_data["password"]) or user.password == self.cleaned_data["password"]:
+        user_pass = self.cleaned_data["password"]
+        if user.check_password(user_pass) or user.password == user_pass:
             return Token.objects.get(user=user)

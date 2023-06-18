@@ -4,6 +4,8 @@ from service_objects.services import ServiceWithResult
 
 from conf.settings.rest_framework import REST_FRAMEWORK
 
+from models_app.models import Subscription
+
 
 class SubscriptionListService(ServiceWithResult):
     URL = "http://127.0.0.1:8000/api/users/subscriptions"
@@ -27,7 +29,13 @@ class SubscriptionListService(ServiceWithResult):
         # recipes_limit =
         self.result = {
             "count": recipes.count(),
-            "next": self.URL + f"?page={page + 1}" if paginator.get_page(page).has_next() else None,
-            "previous": self.URL + f"?page={page - 1}" if paginator.get_page(page).has_previous() else None,
+            "next": 
+                self.URL + f"?page={page + 1}"
+                if paginator.get_page(page).has_next()
+                else None,
+            "previous":
+                self.URL + f"?page={page - 1}"
+                if paginator.get_page(page).has_previous()
+                else None,
             "results": paginator.get_page(page).object_list,
         }

@@ -4,11 +4,11 @@ from django.contrib.auth.models import AbstractUser
 
 class UserProfile(AbstractUser):
 
-    email = models.EmailField(max_length=255, verbose_name="Почта")
+    email = models.EmailField(max_length=255, verbose_name="email")
 
     class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+        verbose_name = 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ'
+        verbose_name_plural = 'РџРѕР»СЊР·РѕРІР°С‚РµР»Рё'
 
     def __str__(self):
         return self.username

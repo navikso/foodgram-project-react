@@ -27,4 +27,7 @@ class RecipeGetService(ServiceWithResult):
 
     def recipe_presence(self):
         if not self._recipe:
-            raise NotFound(message="Страница не найдена.", response_status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(
+                message="Страница не найдена.",
+                response_status=status.HTTP_404_NOT_FOUND
+            )

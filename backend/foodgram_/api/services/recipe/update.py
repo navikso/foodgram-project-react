@@ -22,7 +22,11 @@ class RecipeUpdateService(ServiceWithResult):
     cooking_time = forms.IntegerField(min_value=1)
     user = ModelField(User)
 
-    custom_validations = ["presence_recipe", "access_user", "_list_ingredients"]
+    custom_validations = [
+        "presence_recipe",
+        "access_user",
+        "_list_ingredients"
+    ]
 
     def process(self):
         self.run_custom_validations()
@@ -42,7 +46,10 @@ class RecipeUpdateService(ServiceWithResult):
                 ing.amount = amount
                 ing.save()
             except ObjectDoesNotExist:
-                ing = IngredientAmount.objects.create(ingredient=ingredient, amount=amount)
+                ing = IngredientAmount.objects.create(
+                    ingredient=ingredient,
+                    amount=amount
+                )
                 recipe.ingredients.add(ing)
         for tag in self._tags:
             try:
@@ -67,13 +74,17 @@ class RecipeUpdateService(ServiceWithResult):
                 errors.append(
                     {
                         "id": id_ingredient,
-                        "amount": "Убедитесь, что это значение больше либо равно 1."
+                        "amount": "Убедитесь, что это значение больше нуля."
                     }
                 )
             try:
-                list_ingredients.append([Ingredient.objects.get(id=id_ingredient), amount])
+                list_ingredients.append(
+                    [Ingredient.objects.get(id=id_ingredient),
+                     amount]
+                )
             except ObjectDoesNotExist:
-                raise NotFound(message=f"Страница не найдена. (Ингредиента с id {id_ingredient} не найдено)")
+                raise NotFound(
+                    message=f"Ингредиент с id {id_ingredient} не найден.)")
         if errors:
             raise ValidationError(message={
                 "ingredients": errors
@@ -85,7 +96,9 @@ class RecipeUpdateService(ServiceWithResult):
         try:
             return json.loads(self.cleaned_data["ingredients"])
         except JSONDecodeError:
-            raise ValidationError(message="Передайте корректный список ингредиентов")
+            raise ValidationError(
+                message="Передайте корректный список ингредиентов"
+            )
 
     @property
     def _tags(self):
@@ -94,7 +107,7 @@ class RecipeUpdateService(ServiceWithResult):
             try:
                 list_tags.append(Tag.objects.get(id=id_tag))
             except ObjectDoesNotExist:
-                raise NotFound(message=f"Страница не найдена. (Тега с id {id_tag} не найдено)")
+                raise NotFound(message=f"Тег с id {id_tag} не найден.)")
         return list_tags
 
     def presence_recipe(self):
@@ -103,4 +116,8 @@ class RecipeUpdateService(ServiceWithResult):
 
     def access_user(self):
         if self.cleaned_data["user"] != self._recipe.user:
-            raise ForbiddenError(message="У вас недостаточно прав для выполнения данного действия.")
+            raise ForbiddenError(
+                message=(
+                    "У вас недостаточно прав для выполнения данного действия."
+                )
+            )

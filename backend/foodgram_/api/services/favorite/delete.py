@@ -25,5 +25,7 @@ class FavoriteDeleteService(ServiceWithResult):
     def recipe_presence(self):
         if not Recipe.objects.filter(id=self.cleaned_data["id"]).exists():
             raise ValidationError(message="Такого рецепта не существует")
-        if not Favorites.objects.filter(recipe_id=self.cleaned_data["id"]).exists():
+        if not Favorites.objects.filter(
+            recipe_id=self.cleaned_data["id"]
+        ).exists():
             raise ValidationError(message="Рецепт не находится в избранном")

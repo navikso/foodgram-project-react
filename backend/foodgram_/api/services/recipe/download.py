@@ -18,22 +18,28 @@ class RecipeDownloadService(ServiceWithResult):
 
     @property
     def _file(self):
-        file = open(f"recipe/list-ingredients-{self.cleaned_data['user'].username}.txt", "w+")
+        client = self.cleaned_data['user'].username
+        file = open(f"recipe/list-ingredients-{client}.txt", "w+")
         for key, value in self._data.items():
             file.write(f"{key} - {value}\n")
         file.close()
-        return open(f"recipe/list-ingredients-{self.cleaned_data['user'].username}.txt", "r")
+        return open(f"recipe/list-ingredients-{client}.txt", "r")
 
     @property
     def _data(self):
         data = {}
         for element in self._shopping_list:
             for recipe in element.recipes.all():
-                for ingredientAmount in recipe.ingredients.select_related("ingredient").all():
-                    if f'{ingredientAmount.ingredient.name} ({ingredientAmount.ingredient.measurement_unit})' in data:
-                        data[f'{ingredientAmount.ingredient.name} ({ingredientAmount.ingredient.measurement_unit})'] += \
-                            ingredientAmount.amount
+                for ingredientAmount in recipe.ingredients.select_related(
+                    "ingredient"
+                ).all():
+                    ing_name = ingredientAmount.ingredient.name
+                    ing_measure = ingredientAmount.ingredient.measurement_unit
+                    ing_amount = ingredientAmount.amount
+                    if f'{ing_name} ({ing_measure}' in data:
+                        data[f'{ing_name} ({ing_measure})'] += \
+                            ing_amount
                     else:
-                        data[f'{ingredientAmount.ingredient.name} ({ingredientAmount.ingredient.measurement_unit})'] = \
-                            ingredientAmount.amount
+                        data[f'{ing_name} ({ing_measure})'] = \
+                            ing_amount
         return data

@@ -29,8 +29,8 @@ class RecipeListService(ServiceWithResult):
         if author:
             recipes = recipes.filter(user_id=author)
 
-        # if tags:
-        #     recipes = recipes.filter(tags__name__in=tags.split(","))
+        if tags:
+            recipes = recipes.filter(tags__name__in=tags.split(","))
 
         page = self.cleaned_data.get("page") or 1
         paginator = Paginator(
@@ -39,7 +39,14 @@ class RecipeListService(ServiceWithResult):
         )
         self.result = {
             "count": recipes.count(),
-            "next": self.URL + f"?page={page + 1}" if paginator.get_page(page).has_next() else None,
-            "previous": self.URL + f"?page={page - 1}" if paginator.get_page(page).has_previous() else None,
+            "next":
+                self.URL +
+                + f"?page={page + 1}" if paginator.get_page(page).has_next()
+                else None,
+            "previous":
+                self.URL +
+                + f"?page={page - 1}"
+                if paginator.get_page(page).has_previous()
+                else None,
             "results": paginator.get_page(page).object_list,
         }

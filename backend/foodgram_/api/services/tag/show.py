@@ -27,4 +27,7 @@ class TagGetService(ServiceWithResult):
 
     def tag_presence(self):
         if not self._tag:
-            raise NotFound(message="Страница не найдена.", response_status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(
+                message="Страница не найдена.",
+                response_status=status.HTTP_404_NOT_FOUND
+            )

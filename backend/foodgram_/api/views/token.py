@@ -14,9 +14,16 @@ class TokenGetView(APIView):
     authentication_classes = (BasicAuthentication, )
 
     def post(self, request, *args, **kwargs):
-        data = request.data if not isinstance(request.data, QueryDict) else request.data.dict()
+        data = (
+            request.data
+            if not isinstance(request.data, QueryDict)
+            else request.data.dict()
+        )
         outcome = ServiceOutcome(TokenGetService, data)
-        return Response({"auth_token": outcome.result.key}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"auth_token": outcome.result.key},
+            status=status.HTTP_201_CREATED
+        )
 
 
 class TokenDeleteView(APIView):

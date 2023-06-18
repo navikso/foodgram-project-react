@@ -10,9 +10,17 @@ from api.services.favorite.delete import FavoriteDeleteService
 class FavoriteCreateDeleteView(APIView):
 
     def post(self, request, *args, **kwargs):
-        outcome = ServiceOutcome(FavoriteCreateService, kwargs | {"user": request.user})
-        return Response(FavoriteShowSerializer(outcome.result).data, status=status.HTTP_201_CREATED)
+        outcome = ServiceOutcome(
+            FavoriteCreateService, kwargs | {"user": request.user}
+        )
+        return Response(
+            FavoriteShowSerializer(outcome.result).data,
+            status=status.HTTP_201_CREATED
+        )
 
     def delete(self, request, *args, **kwargs):
         ServiceOutcome(FavoriteDeleteService, kwargs | {"user": request.user})
-        return Response({"INFO": "Рецепт успешно удален из избранного"}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"INFO": "Рецепт успешно удален из избранного"},
+            status=status.HTTP_204_NO_CONTENT
+        )

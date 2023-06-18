@@ -19,12 +19,16 @@ class UserSetPasswordService(ServiceWithResult):
         return self
 
     def _check_password(self):
-        if not self.cleaned_data["user"].check_password(self.cleaned_data["current_password"]) \
-                and self.cleaned_data["user"].password != self.cleaned_data["current_password"]:
+        curent_user = self.cleaned_data["user"]
+        old_pass = self.cleaned_data["current_password"]
+        if not curent_user.check_password(old_pass) \
+                and curent_user.password != old_pass:
             raise ValidationError(message="Текущий пароль не верный")
 
     def _set_password(self):
-        self.cleaned_data["user"].set_password(self.cleaned_data["new_password"])
+        self.cleaned_data["user"].set_password(
+            self.cleaned_data["new_password"]
+        )
         self.cleaned_data["user"].save()
 
     def check_fields(self):
