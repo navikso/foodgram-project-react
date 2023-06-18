@@ -14,4 +14,3 @@ if env("IS_DOCKER", cast=str):
     }
 else:
     DATABASES = {"default": env.db()}
-

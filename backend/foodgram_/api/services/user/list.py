@@ -27,7 +27,7 @@ class UserListService(ServiceWithResult):
         )
         self.result = {
             "count": users.count(),
-            "next": 
+            "next":
                 self.URL + f"?page={page + 1}"
                 if paginator.get_page(page).has_next()
                 else None,

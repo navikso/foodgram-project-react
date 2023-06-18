@@ -13,7 +13,6 @@ class UserAdmin(admin.ModelAdmin):
 
     change_list_template = "admin/users.html"
 
-
     def get_urls(self):
         urls = super().get_urls()
         return [
@@ -29,7 +28,9 @@ class UserAdmin(admin.ModelAdmin):
                 "new_password": request.POST.dict()["new_pass"]
             }
             ServiceOutcome(UserSetPasswordService, context)
-            self.message_user(request, "Вы успешно поменяли пароль пользователю")
+            self.message_user(
+                request, "Вы успешно поменяли пароль пользователю"
+            )
             return redirect("..")
         return render(request, "admin/administaration.html", context={
             "users": User.objects.all(),
