@@ -419,8 +419,8 @@ class SubscriptionCreateDeleteView(APIView):
         except User.DoesNotExist:
             raise ValidationError({"detail": "Страница не найдена."})
 
-        subscribe = \
-            Subscription.objects.get_or_create(user=request.user)[0]
+        subscribe = (
+            Subscription.objects.get_or_create(user=request.user)[0])
 
         if subscribe.authors.all().filter(id=kwargs["id"]):
             raise ValidationError(
