@@ -8,8 +8,6 @@ SHELL ["/bin/bash", "-c"]
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-ENV PIP_ROOT_USER_ACTION=ignore
-
 # Обновляем и скачиваем нужные зависимости в pip
 RUN pip install --upgrade pip
 RUN pip install gunicorn
@@ -33,6 +31,8 @@ RUN pip install -r requirements.txt
 
 # Переключение на созданного пользователя
 USER food
+
+RUN chmod +x manage.py
 
 # Запуск проекта
 CMD ["gunicorn","-b","0.0.0.0:8001","conf.wsgi:application"]

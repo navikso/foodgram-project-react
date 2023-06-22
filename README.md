@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
-
 # «Продуктовый помощник» 
 
 #### _Описание_
@@ -8,33 +6,47 @@
 
 ##### Запуск (docker)
 
-Выполнить команду docker-compose up из директории backend/foodgram_:
+На примере env_example создайте и заполните файл .env  
 
-_docker-compose up -d_
+Выполнить команды docker-compose up из директории backend/foodgram_:
+
+`docker network create  mynetwork`
+
+`docker-compose up -d`
 
 Выполнить команду docker-compose up из директории frontend/:
 
-_docker-compose up -d_
+`docker-compose up -d`
 
 В терминале выполнить следующие команды:
 
-_docker exec -it foodgram_project bash_
+`docker exec -it foodgram_project bash`
 
 Cоздать суперпользователя:
 
-_python manage.py createsuperuser_
+`python manage.py createsuperuser`
 
 Ввести имя пользователя и пароль.
 
-Загрузить ингредиенты:
+#####Примеры запросов:
 
-_python manage.py shell_
-_>>>from utils.upload_ingredients import upload_ingredients_
-_>>> upload_ingredients()_
+По http://158.160.37.68/ доступна страница входа на сайт.
 
-По http://51.250.70.83/ доступна страница входа на сайт.
+http://158.160.37.68/recipes - главная страница с рецептами всех авторов, упорядоченными по дате добавления
 
-По http://51.250.70.83:8081/admin доступна страница администрирования. 
-Данные для суперпользователя:
-Логин: Review
-Пароль: 12345
+http://158.160.37.68/users/1 - профиль пользователя с id=1
+
+http://158.160.37.68/tags - страница с перечнем всех доступных тегов рецептов
+
+
+_Администрирование:_
+
+По http://158.160.37.68/admin доступна страница администрирования. 
+
+Данные суперпользователя:
+Логин: User
+Пароль: User
+
+##### Об авторе:
+Автор - Соколова Анастасия,
+студентка курса "Python-разработчик плюс" от яндекс.Практикум.
