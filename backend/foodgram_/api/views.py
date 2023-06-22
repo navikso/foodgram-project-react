@@ -347,11 +347,6 @@ class RecipeGetDeleteUpdateView(APIView):
             ing.save()
             recipe.ingredients.add(ing)
 
-        for tag in self.get_tags(request):
-            try:
-                recipe.tags.get(slug=tag.slug)
-            except ObjectDoesNotExist:
-                recipe.tags.add(tag)
         return Response(
             RecipeShowSerializer(recipe, context={
                 "user": request.user
