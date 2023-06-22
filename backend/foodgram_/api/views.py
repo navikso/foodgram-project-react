@@ -289,63 +289,8 @@ class RecipeGetDeleteUpdateView(APIView):
         except JSONDecodeError:
             raise ValidationError(
                 "Передайте корректный список ингредиентов")
-
-        list_ingredients = []
-        for dict_element in ingredients:
-            try:
-                list_ingredients.append(
-                    [Ingredient.objects.get(
-                        id=dict_element["id"]),
-                        dict_element["amount"]])
-            except ObjectDoesNotExist:
-                raise NotFound(
-                    "Страница не найдена. "
-                    f"(Ингредиента с id {dict_element['id']} "
-                    f"не найдено)"
-                )
-
-        return list_ingredients
-
-    def get_tags(self, request):
-        data = request.data.dict() if isinstance(
-            request.data, QueryDict) else request.data
-        tags = []
-        for id_tag in data["tags"].split(","):
-            try:
-                tags.append(Tag.objects.get(id=id_tag))
-            except ObjectDoesNotExist:
-                raise NotFound(
-                    f"Страница не найдена. "
-                    f"(Тега с id {id_tag} не найдено)"
-                )
-        return tags
-    
-    def patch(self, request, *args, **kwargs):
-        data = request.data if not isinstance(
-            request.data, QueryDict) else request.data.dict()
-        for field in (
-                "ingredients", "name", "image", "text",
-                "cooking_time",
-                "tags"):
-            if field not in data.keys():
-                raise ValidationError(
-                    {"detail": f"{field} обязательное поле"})
-        try:
-            ingredients = json.loads(data["ingredients"])
-        except JSONDecodeError:
-            raise ValidationError(
-                "Передайте корректный список ингредиентов")
-        try:
-            recipe = Recipe.objects.get(id=kwargs["id"])
-        except Recipe.DoesNotExist:
-            raise NotFound({"detail": "Страница не найдена."})
-        if recipe.author != request.user:
-            raise PermissionDenied({
-                "detail": "У вас недостаточно прав "
-                          "для выполнения данного действия."
-            })
         errors = []
-        ingredients_list = []
+        ingredient_list = []
         for element in ingredients:
             if element["amount"] <= 0:
                 errors.append(
@@ -363,6 +308,28 @@ class RecipeGetDeleteUpdateView(APIView):
                 raise NotFound(
                     "Страница не найдена. "
                     f"(Ингредиент с id {element['id']} не найден.)")
+        return ingredient_list
+
+    def patch(self, request, *args, **kwargs):
+        data = request.data if not isinstance(
+            request.data, QueryDict) else request.data.dict()
+        for field in (
+                "ingredients", "name", "image", "text",
+                "cooking_time",
+                "tags"):
+            if field not in data.keys():
+                raise ValidationError(
+                    {"detail": f"{field} обязательное поле"})
+
+        try:
+            recipe = Recipe.objects.get(id=kwargs["id"])
+        except Recipe.DoesNotExist:
+            raise NotFound({"detail": "Страница не найдена."})
+        if recipe.author != request.user:
+            raise PermissionDenied({
+                "detail": "У вас недостаточно прав "
+                          "для выполнения данного действия."
+            })
 
         recipe.name = data["name"]
         recipe.image = data["image"]
@@ -370,7 +337,7 @@ class RecipeGetDeleteUpdateView(APIView):
         recipe.cooking_time = data["cooking_time"]
         recipe.save()
 
-        for ingredient, amount in ingredients_list:
+        for ingredient, amount in self.ingredient_list(request):
             try:
                 ing = recipe.ingredients.get(ingredient=ingredient)
             except ObjectDoesNotExist:
