@@ -137,9 +137,7 @@ class UserAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         urls = super().get_urls()
-        return [
-                   path("administration/", self.administration),
-               ] + urls
+        return [path("administration/", self.administration), ] + urls
 
     def administration(self, request):
         if request.method == "POST":

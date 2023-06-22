@@ -141,24 +141,9 @@ class RecipeListCreateView(APIView):
         )
         return paginator.get_paginated_response(serializer.data)
 
-    def post(self, request, *args, **kwargs):
+    def get_ingredient(self, request):
         data = request.data.dict() if isinstance(
             request.data, QueryDict) else request.data
-        for field in (
-                "ingredients", "name",
-                "image", "text", "cooking_time", "tags"
-        ):
-            if field not in data.keys():
-                raise ValidationError(
-                    {"detail": f"{field} обязательное поле"})
-        recipe = Recipe.objects.create(
-            name=data["name"],
-            image=data["image"],
-            text=data["text"],
-            cooking_time=data["cooking_time"],
-            author=request.user
-        )
-
         try:
             ingredients = json.loads(data["ingredients"])
         except JSONDecodeError:
@@ -179,13 +164,11 @@ class RecipeListCreateView(APIView):
                     f"не найдено)"
                 )
 
-        for element in list_ingredients:
-            recipe.ingredients.add(
-                IngredientAmount.objects.get_or_create(
-                    ingredient=element[0],
-                    amount=element[1]
-                )[0]
-            )
+        return list_ingredients
+
+    def get_tags(self, request):
+        data = request.data.dict() if isinstance(
+            request.data, QueryDict) else request.data
         tags = []
         for id_tag in data["tags"].split(","):
             try:
@@ -195,7 +178,35 @@ class RecipeListCreateView(APIView):
                     f"Страница не найдена. "
                     f"(Тега с id {id_tag} не найдено)"
                 )
-        for element in tags:
+        return tags
+
+    def post(self, request, *args, **kwargs):
+        data = request.data.dict() if isinstance(
+            request.data, QueryDict) else request.data
+        for field in (
+                "ingredients", "name",
+                "image", "text", "cooking_time", "tags"
+        ):
+            if field not in data.keys():
+                raise ValidationError(
+                    {"detail": f"{field} обязательное поле"})
+        recipe = Recipe.objects.create(
+            name=data["name"],
+            image=data["image"],
+            text=data["text"],
+            cooking_time=data["cooking_time"],
+            author=request.user
+        )
+
+        for element in self.get_ingredients(request):
+            recipe.ingredients.add(
+                IngredientAmount.objects.get_or_create(
+                    ingredient=element[0],
+                    amount=element[1]
+                )[0]
+            )
+
+        for element in self.get_tags(request):
             recipe.tags.add(element)
         recipe.is_favorited = bool(Favorites.objects.filter(
             user=request.user, recipe=recipe))
@@ -255,7 +266,7 @@ class RecipeGetDeleteUpdateView(APIView):
 
         return Response(RecipeShowSerializer(
             recipe, context={"user": request.user}).data,
-                        status=status.HTTP_200_OK)
+            status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -270,6 +281,45 @@ class RecipeGetDeleteUpdateView(APIView):
         recipe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def get_ingredient(self, request):
+        data = request.data.dict() if isinstance(
+            request.data, QueryDict) else request.data
+        try:
+            ingredients = json.loads(data["ingredients"])
+        except JSONDecodeError:
+            raise ValidationError(
+                "Передайте корректный список ингредиентов")
+
+        list_ingredients = []
+        for dict_element in ingredients:
+            try:
+                list_ingredients.append(
+                    [Ingredient.objects.get(
+                        id=dict_element["id"]),
+                        dict_element["amount"]])
+            except ObjectDoesNotExist:
+                raise NotFound(
+                    "Страница не найдена. "
+                    f"(Ингредиента с id {dict_element['id']} "
+                    f"не найдено)"
+                )
+
+        return list_ingredients
+
+    def get_tags(self, request):
+        data = request.data.dict() if isinstance(
+            request.data, QueryDict) else request.data
+        tags = []
+        for id_tag in data["tags"].split(","):
+            try:
+                tags.append(Tag.objects.get(id=id_tag))
+            except ObjectDoesNotExist:
+                raise NotFound(
+                    f"Страница не найдена. "
+                    f"(Тега с id {id_tag} не найдено)"
+                )
+        return tags
+    
     def patch(self, request, *args, **kwargs):
         data = request.data if not isinstance(
             request.data, QueryDict) else request.data.dict()
@@ -306,7 +356,7 @@ class RecipeGetDeleteUpdateView(APIView):
                     }
                 )
             try:
-                ingredients_list.append(
+                self.get_ingredients(request).append(
                     [Ingredient.objects.get(id=element["id"]),
                      element["amount"]])
             except ObjectDoesNotExist:
@@ -330,16 +380,7 @@ class RecipeGetDeleteUpdateView(APIView):
             ing.save()
             recipe.ingredients.add(ing)
 
-        tag_list = []
-        for id_tag in data["tags"].split(","):
-            try:
-                tag_list.append(Tag.objects.get(id=id_tag))
-            except ObjectDoesNotExist:
-                raise NotFound(
-                    f"Страница не найдена. (Тег с id "
-                    f"{id_tag} не найден.)")
-
-        for tag in tag_list:
+        for tag in self.get_tags(request):
             try:
                 recipe.tags.get(slug=tag.slug)
             except ObjectDoesNotExist:
