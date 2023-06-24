@@ -31,5 +31,5 @@ urlpatterns = [
     path("users/<int:id>/subscribe/",
          SubscriptionCreateDeleteView.as_view()),
     path("users/subscriptions/",
-         SubscriptionListView.as_view({'get': 'list'})),
+         SubscriptionListView.as_view({"get": "list"})),
 ]

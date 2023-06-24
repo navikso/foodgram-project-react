@@ -1,12 +1,34 @@
 from rest_framework import serializers
+from rest_framework.validators import ValidationError
 
 from models_app.models import (
     Ingredient, IngredientAmount, Recipe,
-    Subscription, Tag, User
-)
-
+    Subscription, Tag)
+from users.models import User
 from conf.settings.django import env
-from users.serializers import UserGetSerializer
+
+
+class UserGetSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "is_subscribed",
+        )
+
+    def get_is_subscribed(self, obj):
+        user = self.context.get("user")
+        if user and user.is_authenticated:
+            return Subscription.objects.get_or_create(
+                user=self.context["user"]
+            )[0].authors.filter(id=obj.id).exists()
+        return False
 
 
 class FavoriteShowSerializer(serializers.ModelSerializer):
@@ -125,10 +147,10 @@ class RecipeShowSerializer(serializers.ModelSerializer):
         return f"{env('DOMAIN')}{obj.image.url}"
 
     def get_is_favorited(self, obj):
-        return obj.is_favorited
+        return getattr(obj, "is_favorited", False)
 
     def get_is_in_shopping_cart(self, obj):
-        return obj.is_in_shopping_cart
+        return getattr(obj, "is_in_shopping_cart", False)
 
 
 class SubscriptionUserGetSerializer(serializers.ModelSerializer):
@@ -158,8 +180,38 @@ class SubscriptionUserGetSerializer(serializers.ModelSerializer):
         ).data
 
     def get_is_subscribed(self, obj):
-        if self.context.get("user"):
-            return bool(Subscription.objects.get_or_create(
+        user = self.context.get("user")
+        if user and user.is_authenticated:
+            return Subscription.objects.get_or_create(
                 user=self.context["user"]
-            )[0].authors.filter(id=obj.id))
+            )[0].authors.filter(id=obj.id).exists()
         return False
+
+
+class UserSmallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+        )
+
+
+class UserSetPasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField()
+    new_password = serializers.CharField()
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if 'current_password' not in attrs:
+            raise ValidationError({
+                "current_password": "Обязательное поле."
+            })
+        if 'new_password' not in attrs:
+            raise ValidationError({
+                "new_password": "Обязательное поле."
+            })
+        return attrs

@@ -5,14 +5,14 @@ from rest_framework.response import Response
 
 
 def custom_exception_handler(exc, context):
+    if hasattr(
+        exc, "default_code"
+    ) and exc.default_code == "authentication_failed":
+        response_status = status.HTTP_401_UNAUTHORIZED
+    else:
+        response_status = exc.response_status
     try:
-        # ПОМЕНЯТЬ
-        if hasattr(
-            exc, "default_code"
-        ) and exc.default_code == 'authentication_failed':
-            response_status = status.HTTP_401_UNAUTHORIZED
-        else:
-            response_status = exc.response_status
+        response_status
     except AttributeError:
         response_status = exc.status_code if hasattr(
             exc, "status_code"

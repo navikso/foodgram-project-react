@@ -1,7 +1,7 @@
 from django.core.validators import MinValueValidator
-from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+
+from users.models import User
 
 
 class Favorites(models.Model):
@@ -9,7 +9,7 @@ class Favorites(models.Model):
         "Recipe", on_delete=models.CASCADE,
         related_name="list_recipes_favorites", verbose_name="Рецепт")
     user = models.ForeignKey(
-        "User", on_delete=models.CASCADE, verbose_name="Пользователь")
+        User, on_delete=models.CASCADE, verbose_name="Пользователь")
 
     class Meta:
         db_table = "favorites"
@@ -66,7 +66,7 @@ class Recipe(models.Model):
         "IngredientAmount", verbose_name="Ингредиенты")
     tags = models.ManyToManyField("Tag", verbose_name="Теги")
     author = models.ForeignKey(
-        "User", on_delete=models.CASCADE,
+        User, on_delete=models.CASCADE,
         related_name="user_recipes",
         verbose_name="Пользователь")
     created_at = models.DateTimeField(
@@ -88,11 +88,10 @@ class ShoppingList(models.Model):
     recipes = models.ManyToManyField(
         "Recipe",
         verbose_name="Рецепт",
-        null=True,
         blank=True
     )
     user = models.ForeignKey(
-        "User", on_delete=models.CASCADE, verbose_name="Пользователь")
+        User, on_delete=models.CASCADE, verbose_name="Пользователь")
 
     class Meta:
         db_table = "shopping_lists"
@@ -105,14 +104,13 @@ class ShoppingList(models.Model):
 
 class Subscription(models.Model):
     authors = models.ManyToManyField(
-        "User",
+        User,
         verbose_name="Пользователи, на которых подписан",
         related_name="list_authors",
-        null=True,
         blank=True
     )
     user = models.ForeignKey(
-        "User",
+        User,
         on_delete=models.CASCADE,
         verbose_name="Пользователь",
         related_name="list_user_subs")
@@ -141,35 +139,3 @@ class Tag(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.color}"
-
-
-class User(AbstractUser):
-    username = models.CharField(
-        max_length=150,
-        help_text=_(
-            "Required. 150 characters or fewer."
-        ),
-        error_messages={
-            "unique": _("A user with that username already exists."),
-        }, verbose_name="Username",
-        unique=True,
-    )
-    email = models.EmailField(
-        max_length=255, unique=True, verbose_name="Почта")
-    is_blocked = models.BooleanField(
-        default=False, verbose_name="Блокировка")
-    created_at = models.DateTimeField(
-        auto_now_add=True, verbose_name="Дата создания")
-    updated_at = models.DateTimeField(
-        auto_now=True, verbose_name="Дата обновления")
-
-    USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = []
-
-    class Meta:
-        db_table = "users"
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
-
-    def __str__(self):
-        return self.username

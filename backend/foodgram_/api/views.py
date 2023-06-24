@@ -8,10 +8,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Value, Sum, F, Exists, OuterRef
 from django.db.models.functions import Concat
 from django.http import HttpResponse, QueryDict
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import (
     ValidationError, NotFound, PermissionDenied)
 from api.permissions import UserAccessPermission
-from conf.settings.django import env
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
 
@@ -24,28 +25,43 @@ from api.serializers import (
     FavoriteShowSerializer, IngredientSerializer,
     RecipeShowSerializer,
     SubscriptionUserGetSerializer, TagListSerializer,
-    SubscriptionRecipeListSerializer
+    SubscriptionRecipeListSerializer, UserSetPasswordSerializer
 )
 
 from models_app.models import (
     Favorites, Ingredient, IngredientAmount,
-    Recipe, ShoppingList, Subscription, Tag, User
+    Recipe, ShoppingList, Subscription, Tag
 )
+from .serializers import (
+    UserGetSerializer,
+    UserSmallSerializer
+)
+from users.models import User
 
 
 class FavoriteCreateDeleteView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            recipe = Recipe.objects.get(id=kwargs["id"])
+            recipe = get_object_or_404(Recipe, id=kwargs["id"])
         except Recipe.DoesNotExist:
             raise ValidationError("Рецепта не существует")
 
-        if Favorites.objects.filter(recipe=recipe).exists():
+        if not request.user.is_authenticated:
+            raise PermissionDenied(
+                "У вас недостаточно прав для "
+                "выполнения данного действия."
+            )
+
+        if Favorites.objects.filter(
+                user=request.user,
+                recipe=recipe
+        ).exists():
             raise ValidationError("Рецепт уже находится в избранном")
+
         Favorites.objects.create(
-            recipe=recipe,
-            user=request.user
+            user=request.user,
+            recipe=recipe
         )
         return Response(
             FavoriteShowSerializer(recipe).data,
@@ -58,9 +74,12 @@ class FavoriteCreateDeleteView(APIView):
         except Recipe.DoesNotExist:
             raise ValidationError("Рецепта не существует")
 
-        if not Favorites.objects.filter(recipe=recipe).exists():
+        if not Favorites.objects.filter(
+                recipe=recipe,
+                user=request.user
+        ).exists():
             raise ValidationError("Рецепта нет в избранном")
-        Favorites.objects.get(recipe=recipe).delete()
+        Favorites.objects.get(recipe=recipe, user=request.user).delete()
         return Response(
             {"INFO": "Рецепт успешно удален из избранного"},
             status=status.HTTP_204_NO_CONTENT
@@ -68,7 +87,6 @@ class FavoriteCreateDeleteView(APIView):
 
 
 class IngredientListView(ListAPIView):
-    URL = f"{env('DOMAIN')}/api/ingredients/"
     serializer_class = IngredientSerializer
 
     def get_queryset(self):
@@ -86,7 +104,6 @@ class IngredientGetView(APIView):
 
 
 class RecipeListCreateView(APIView):
-    URL = f"{env('DOMAIN')}/api/recipes/"
     pagination_class = PageNumberPagination
 
     def get(self, request, *args, **kwargs):
@@ -97,16 +114,21 @@ class RecipeListCreateView(APIView):
             recipes = recipes.filter(author_id=author)
         if tags:
             recipes = recipes.filter(tags__slug__in=tags)
+
         is_in_shopping_cart = request.GET.get("is_in_shopping_cart")
         if is_in_shopping_cart and self.request.user.is_authenticated:
+            shopping_list = ShoppingList.objects.get_or_create(
+                user=self.request.user
+            )[0]
             if is_in_shopping_cart == "0":
                 recipes = recipes.exclude(
-                    shoppinglist__user=self.request.user
+                    shoppinglist=shopping_list,
                 )
             elif is_in_shopping_cart == "1":
                 recipes = recipes.filter(
-                    shoppinglist__user=self.request.user
+                    shoppinglist=shopping_list,
                 )
+
         is_favorited = request.GET.get("is_favorited")
         if is_favorited and self.request.user.is_authenticated:
             if is_favorited == "0":
@@ -117,12 +139,15 @@ class RecipeListCreateView(APIView):
                 recipes = recipes.filter(
                     list_recipes_favorites__user=self.request.user
                 )
-        recipes = recipes.annotate(
-            is_favorited=Exists(
-                Favorites.objects.filter(user=request.user,
-                                         recipe=OuterRef('id'))),
-        )
         if request.user.is_authenticated:
+            recipes = recipes.annotate(
+                is_favorited=Exists(
+                    Favorites.objects.filter(
+                        user=request.user,
+                        recipe=OuterRef('id'))
+                ),
+            )
+
             recipes = recipes.annotate(
                 is_in_shopping_cart=Exists(
                     ShoppingList.objects.get_or_create(
@@ -141,7 +166,7 @@ class RecipeListCreateView(APIView):
         )
         return paginator.get_paginated_response(serializer.data)
 
-    def get_ingredient(self, request):
+    def get_ingredients(self, request):
         data = request.data.dict() if isinstance(
             request.data, QueryDict) else request.data
         try:
@@ -208,13 +233,12 @@ class RecipeListCreateView(APIView):
 
         for element in self.get_tags(request):
             recipe.tags.add(element)
-        recipe.is_favorited = bool(Favorites.objects.filter(
-            user=request.user, recipe=recipe))
+        recipe.is_favorited = Favorites.objects.filter(
+            user=request.user, recipe=recipe).exists()
 
-        recipe.is_in_shopping_cart = bool(
-            ShoppingList.objects.get_or_create(
-                user=request.user
-            )[0].recipes.filter(id=recipe.id))
+        recipe.is_in_shopping_cart = ShoppingList.objects.get_or_create(
+            user=request.user
+        )[0].recipes.filter(id=recipe.id).exists()
 
         return Response(
             RecipeShowSerializer(recipe,
@@ -259,14 +283,13 @@ class RecipeGetDeleteUpdateView(APIView):
         if request.user.is_authenticated:
             recipe.is_favorited = bool(Favorites.objects.filter(
                 user=request.user, recipe=recipe))
-            recipe.is_in_shopping_cart = bool(
-                ShoppingList.objects.get_or_create(
-                    user=request.user
-                )[0].recipes.filter(id=recipe.id))
+            recipe.is_in_shopping_cart = ShoppingList.objects.get_or_create(
+                user=request.user
+            )[0].recipes.filter(id=recipe.id).exists()
 
         return Response(RecipeShowSerializer(
             recipe, context={"user": request.user}).data,
-            status=status.HTTP_200_OK)
+                        status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -281,7 +304,7 @@ class RecipeGetDeleteUpdateView(APIView):
         recipe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get_ingredient(self, request):
+    def get_ingredients(self, request):
         data = request.data.dict() if isinstance(
             request.data, QueryDict) else request.data
         try:
@@ -301,13 +324,15 @@ class RecipeGetDeleteUpdateView(APIView):
                     }
                 )
             try:
-                self.get_ingredients(request).append(
+                ingredient_list.append(
                     [Ingredient.objects.get(id=element["id"]),
                      element["amount"]])
             except ObjectDoesNotExist:
                 raise NotFound(
                     "Страница не найдена. "
                     f"(Ингредиент с id {element['id']} не найден.)")
+        if errors:
+            raise ValidationError(errors)
         return ingredient_list
 
     def patch(self, request, *args, **kwargs):
@@ -337,7 +362,7 @@ class RecipeGetDeleteUpdateView(APIView):
         recipe.cooking_time = data["cooking_time"]
         recipe.save()
 
-        for ingredient, amount in self.ingredient_list(request):
+        for ingredient, amount in self.get_ingredients(request):
             try:
                 ing = recipe.ingredients.get(ingredient=ingredient)
             except ObjectDoesNotExist:
@@ -362,7 +387,7 @@ class ShoppingCreateDeleteView(APIView):
             user=request.user
         )[0]
         shopping_recipe = shopping_list.recipes.filter(id=recipe.id)
-        if bool(shopping_recipe):
+        if shopping_recipe.exists():
             raise ValidationError(
                 {"errors": "Рецепт уже есть в списке покупок"})
         shopping_list.recipes.add(recipe)
@@ -494,3 +519,82 @@ class TokenDeleteView(APIView):
     def post(self, request, *args, **kwargs):
         Token.objects.get(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserSetPasswordView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        current_user = request.user
+        data = request.data if not isinstance(
+            request.data, QueryDict) else request.data.dict()
+        serializer = UserSetPasswordSerializer(data=data)
+        if serializer.is_valid():
+            for field in ("current_password", "new_password"):
+                try:
+                    data[field]
+                except KeyError:
+                    raise ValidationError(
+                        {"error": f"{field} не заполнено"})
+
+            current_pass = data["current_password"]
+            if not current_user.check_password(
+                    current_pass) and (
+                    current_user.password != current_pass):
+                raise ValidationError("Текущий пароль не верный")
+
+            current_user.set_password(data["new_password"])
+            current_user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserListCreateView(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    pagination_class = PageNumberPagination
+    queryset = User.objects.all()
+    serializer_class = UserGetSerializer
+
+    def post(self, request, *args, **kwargs):
+        data = request.data if not isinstance(
+            request.data, QueryDict) else request.data.dict()
+        for field in (
+                "email", "username", "first_name", "last_name",
+                "password",
+        ):
+            try:
+                data[field]
+            except KeyError:
+                raise ValidationError(
+                    {"error": f"{field} не заполнено"})
+        user = User.objects.create(
+            email=data["email"],
+            username=data["username"],
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            password=data["password"]
+        )
+        Token.objects.create(user=user)
+        return Response(
+            UserSmallSerializer(user).data,
+            status=status.HTTP_201_CREATED)
+
+
+class UserGetView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user = get_object_or_404(User, id=kwargs["id"])
+        except User.DoesNotExist:
+            raise NotFound("Пользователь не найден.")
+        return Response(
+            UserGetSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class UserGetMeView(APIView):
+    permission_classes = (UserAccessPermission,)
+
+    def get(self, request, *args, **kwargs):
+        return Response(
+            UserGetSerializer(request.user).data,
+            status=status.HTTP_200_OK)

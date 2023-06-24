@@ -10,7 +10,7 @@ from models_app.models import (
 from django.contrib import admin
 from django.shortcuts import redirect, render
 from django.urls import path
-from models_app.models import User
+from users.models import User
 
 
 @admin.register(Favorites)
@@ -126,7 +126,7 @@ class UserAdmin(admin.ModelAdmin):
         "email",
         "first_name",
         "last_name",
-        "is_blocked"
+        "is_active"
     )
     list_filter = (
         "email",

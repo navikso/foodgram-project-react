@@ -19,7 +19,7 @@ class BlockPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if isinstance(request.user, AnonymousUser):
             return True
-        if request.user.is_blocked:
+        if not request.user.is_active:
             raise PermissionDenied(
                 {
                     "detail": "Учетные данные не "
