@@ -289,7 +289,7 @@ class RecipeGetDeleteUpdateView(APIView):
 
         return Response(RecipeShowSerializer(
             recipe, context={"user": request.user}).data,
-                        status=status.HTTP_200_OK)
+            status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         try:
