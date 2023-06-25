@@ -110,7 +110,7 @@ class RecipeListView(APIView):
 
         is_in_shopping_cart = request.GET.get("is_in_shopping_cart")
         if is_in_shopping_cart and self.request.user.is_authenticated:
-            shopping_list = ShoppingList.objects.get_or_create( 
+            shopping_list = ShoppingList.objects.get_or_create(
                 user=self.request.user
             )[0]
 
