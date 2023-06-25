@@ -11,7 +11,7 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",),
     "DEFAULT_PERMISSION_CLASSES": (
         "api.permissions.BlockPermission",),
-    "DEFAULT_PAGINATION_CLASS": 
-        "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": (
+        "rest_framework.pagination.LimitOffsetPagination",),
     "PAGE_SIZE": env("PAGE_SIZE", default=10, cast=int),
 }

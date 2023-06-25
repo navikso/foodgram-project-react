@@ -138,13 +138,14 @@ class RecipeListView(APIView):
                 is_favorited=Exists(
                     Favorites.objects.filter(
                         user_id=request.user.id,
-                        recipe=OuterRef("id"))
-                    ),
+                        recipe=OuterRef("id")
+                    )
+                ),
                 is_in_shopping_cart=Exists(
                     ShoppingList.objects.get(
                         user_id=request.user.id,
                     ).recipes.filter(id=OuterRef("id")))
-            )
+                )
 
         paginator = self.pagination_class()
         paginated_recipes = paginator.paginate_queryset(
@@ -283,7 +284,7 @@ class RecipeGetDeleteUpdateView(APIView):
             )[0].recipes.filter(id=recipe.id).exists()
 
         return Response(RecipeShowSerializer(
-            recipe, context={"user": request.user}).data,
+                        recipe, context={"user": request.user}).data,
                         status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
