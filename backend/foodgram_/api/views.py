@@ -80,6 +80,7 @@ class FavoriteCreateDeleteView(APIView):
 
 class IngredientListView(ListAPIView):
     serializer_class = IngredientSerializer
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         return Ingredient.objects.filter(
@@ -569,6 +570,7 @@ class UserListCreateView(ModelViewSet):
 
 
 class UserGetView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
         try:
