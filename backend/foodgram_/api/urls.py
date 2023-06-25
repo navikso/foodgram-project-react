@@ -1,7 +1,8 @@
 from django.urls import path
 
 from api.views import (IngredientListView, IngredientGetView,
-                       TagListView, RecipeListCreateView,
+                       TagListView, RecipeListView,
+                       RecipeCreateView,
                        RecipeDownloadView, FavoriteCreateDeleteView,
                        TagGetView, ShoppingCreateDeleteView,
                        RecipeGetDeleteUpdateView, TokenGetView,
@@ -16,7 +17,8 @@ urlpatterns = [
     path("tags/", TagListView.as_view()),
     path("tags/<int:id>/", TagGetView.as_view()),
 
-    path("recipes/", RecipeListCreateView.as_view()),
+    path("recipes/", RecipeListView.as_view()),
+    path("recipes/", RecipeCreateView.as_view()),
     path("recipes/<int:id>/favorite/",
          FavoriteCreateDeleteView.as_view()),
     path("recipes/download_shopping_cart/",

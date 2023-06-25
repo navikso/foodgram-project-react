@@ -6,7 +6,7 @@ from conf.settings.django import BASE_DIR
 
 
 def upload_ingredients(apps, schema_editor):
-    Ingredient = apps.get_model('models_app', 'Ingredient')
+    Ingredient = apps.get_model("models_app", "Ingredient")
     with open(
         os.path.join(BASE_DIR, "upload_ingredients", "ingredients.json"),
         "r", encoding="UTF-8"
@@ -22,7 +22,7 @@ def upload_ingredients(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('models_app', '0001_initial'),
+        ("models_app", "0001_initial"),
     ]
 
     operations = [

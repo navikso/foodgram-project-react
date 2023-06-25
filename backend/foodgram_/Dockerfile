@@ -27,7 +27,7 @@ RUN mkdir /food/static && mkdir /food/media && chown -R food:food /food && chmod
 # Копирование файлов проекта с ПК на Образ
 COPY --chown=food:food . .
 
-RUN pip install -r requirements.txt
+RUN pip install -r backend/requirements.txt
 
 # Переключение на созданного пользователя
 USER food

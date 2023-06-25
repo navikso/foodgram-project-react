@@ -25,9 +25,9 @@ class UserGetSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         user = self.context.get("user")
         if user and user.is_authenticated:
-            return Subscription.objects.get_or_create(
+            return Subscription.objects.get(
                 user=self.context["user"]
-            )[0].authors.filter(id=obj.id).exists()
+            ).authors.filter(id=obj.id).exists()
         return False
 
 
@@ -124,8 +124,8 @@ class RecipeShowSerializer(serializers.ModelSerializer):
     )
     tags = TagListSerializer(read_only=True, many=True)
     author = UserGetSerializer(read_only=True)
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
+    is_favorited = serializers.ReadOnlyField()
+    is_in_shopping_cart = serializers.ReadOnlyField()
     image = serializers.SerializerMethodField()
 
     class Meta:
@@ -145,12 +145,6 @@ class RecipeShowSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         return f"{env('DOMAIN')}{obj.image.url}"
-
-    def get_is_favorited(self, obj):
-        return getattr(obj, "is_favorited", False)
-
-    def get_is_in_shopping_cart(self, obj):
-        return getattr(obj, "is_in_shopping_cart", False)
 
 
 class SubscriptionUserGetSerializer(serializers.ModelSerializer):
@@ -184,7 +178,7 @@ class SubscriptionUserGetSerializer(serializers.ModelSerializer):
         if user and user.is_authenticated:
             return Subscription.objects.get_or_create(
                 user=self.context["user"]
-            )[0].authors.filter(id=obj.id).exists()
+            ).authors.filter(id=obj.id)
         return False
 
 

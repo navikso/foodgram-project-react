@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.permissions import IsAuthenticated
 from django.db.models import Value, Sum, F, Exists, OuterRef
 from django.db.models.functions import Concat
 from django.http import HttpResponse, QueryDict
@@ -12,14 +13,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import (
     ValidationError, NotFound, PermissionDenied)
 from api.permissions import UserAccessPermission
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import (
+    BasicAuthentication, TokenAuthentication)
 from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import ListAPIView
-
-from rest_framework.authentication import BasicAuthentication
 
 from api.serializers import (
     FavoriteShowSerializer, IngredientSerializer,
@@ -40,18 +40,10 @@ from users.models import User
 
 
 class FavoriteCreateDeleteView(APIView):
+    permission_classes = (UserAccessPermission,)
 
     def post(self, request, *args, **kwargs):
-        try:
-            recipe = get_object_or_404(Recipe, id=kwargs["id"])
-        except Recipe.DoesNotExist:
-            raise ValidationError("Рецепта не существует")
-
-        if not request.user.is_authenticated:
-            raise PermissionDenied(
-                "У вас недостаточно прав для "
-                "выполнения данного действия."
-            )
+        recipe = get_object_or_404(Recipe, id=kwargs["id"])
 
         if Favorites.objects.filter(
                 user=request.user,
@@ -70,7 +62,7 @@ class FavoriteCreateDeleteView(APIView):
 
     def delete(self, request, *args, **kwargs):
         try:
-            recipe = Recipe.objects.get(id=kwargs["id"])
+            recipe = get_object_or_404(Recipe, id=kwargs["id"])
         except Recipe.DoesNotExist:
             raise ValidationError("Рецепта не существует")
 
@@ -103,7 +95,7 @@ class IngredientGetView(APIView):
             status=status.HTTP_200_OK)
 
 
-class RecipeListCreateView(APIView):
+class RecipeListView(APIView):
     pagination_class = PageNumberPagination
 
     def get(self, request, *args, **kwargs):
@@ -117,9 +109,10 @@ class RecipeListCreateView(APIView):
 
         is_in_shopping_cart = request.GET.get("is_in_shopping_cart")
         if is_in_shopping_cart and self.request.user.is_authenticated:
-            shopping_list = ShoppingList.objects.get_or_create(
+            shopping_list = ShoppingList.objects.get_or_create( 
                 user=self.request.user
             )[0]
+
             if is_in_shopping_cart == "0":
                 recipes = recipes.exclude(
                     shoppinglist=shopping_list,
@@ -143,16 +136,13 @@ class RecipeListCreateView(APIView):
             recipes = recipes.annotate(
                 is_favorited=Exists(
                     Favorites.objects.filter(
-                        user=request.user,
-                        recipe=OuterRef('id'))
-                ),
-            )
-
-            recipes = recipes.annotate(
+                        user_id=request.user.id,
+                        recipe=OuterRef("id"))
+                    ),
                 is_in_shopping_cart=Exists(
-                    ShoppingList.objects.get_or_create(
-                        user=request.user
-                    )[0].recipes.filter(id=OuterRef('id')))
+                    ShoppingList.objects.get(
+                        user_id=request.user.id,
+                    ).recipes.filter(id=OuterRef("id")))
             )
 
         paginator = self.pagination_class()
@@ -165,6 +155,10 @@ class RecipeListCreateView(APIView):
             many=True, context={"user": request.user}
         )
         return paginator.get_paginated_response(serializer.data)
+
+
+class RecipeCreateView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def get_ingredients(self, request):
         data = request.data.dict() if isinstance(
@@ -179,9 +173,9 @@ class RecipeListCreateView(APIView):
         for dict_element in ingredients:
             try:
                 list_ingredients.append(
-                    [Ingredient.objects.get(
+                    (Ingredient.objects.get(
                         id=dict_element["id"]),
-                        dict_element["amount"]])
+                        dict_element["amount"]))
             except ObjectDoesNotExist:
                 raise NotFound(
                     "Страница не найдена. "
@@ -277,7 +271,7 @@ class RecipeDownloadView(APIView):
 class RecipeGetDeleteUpdateView(APIView):
 
     def get(self, request, *args, **kwargs):
-        recipe = Recipe.objects.get(id=kwargs["id"])
+        recipe = get_object_or_404(Recipe, id=kwargs["id"])
         if not recipe:
             raise NotFound("Страница не найдена.")
         if request.user.is_authenticated:
@@ -289,11 +283,11 @@ class RecipeGetDeleteUpdateView(APIView):
 
         return Response(RecipeShowSerializer(
             recipe, context={"user": request.user}).data,
-            status=status.HTTP_200_OK)
+                        status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         try:
-            recipe = Recipe.objects.get(id=kwargs["id"])
+            recipe = get_object_or_404(Recipe, id=kwargs["id"])
         except Recipe.DoesNotExist:
             raise NotFound({"detail": "Страница не найдена."})
         if request.user != recipe.author:
@@ -347,7 +341,7 @@ class RecipeGetDeleteUpdateView(APIView):
                     {"detail": f"{field} обязательное поле"})
 
         try:
-            recipe = Recipe.objects.get(id=kwargs["id"])
+            recipe = get_object_or_404(Recipe, id=kwargs["id"])
         except Recipe.DoesNotExist:
             raise NotFound({"detail": "Страница не найдена."})
         if recipe.author != request.user:
@@ -380,9 +374,10 @@ class RecipeGetDeleteUpdateView(APIView):
 
 
 class ShoppingCreateDeleteView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        recipe = Recipe.objects.get(id=kwargs["id"])
+        recipe = get_object_or_404(Recipe, id=kwargs["id"])
         shopping_list = ShoppingList.objects.get_or_create(
             user=request.user
         )[0]
@@ -440,6 +435,7 @@ class SubscriptionListView(ModelViewSet):
 
 
 class SubscriptionCreateDeleteView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -463,7 +459,7 @@ class SubscriptionCreateDeleteView(APIView):
 
     def delete(self, request, *args, **kwargs):
         try:
-            subscription = Subscription.objects.get(user=request.user)
+            subscription = get_object_or_404(Subscription, user=request.user)
         except Subscription.DoesNotExist:
             raise NotFound({"detail": "Страница не найдена."})
         try:
@@ -522,31 +518,23 @@ class TokenDeleteView(APIView):
 
 
 class UserSetPasswordView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         current_user = request.user
         data = request.data if not isinstance(
             request.data, QueryDict) else request.data.dict()
         serializer = UserSetPasswordSerializer(data=data)
-        if serializer.is_valid():
-            for field in ("current_password", "new_password"):
-                try:
-                    data[field]
-                except KeyError:
-                    raise ValidationError(
-                        {"error": f"{field} не заполнено"})
+        serializer.is_valid(raise_exception=True)
+        current_pass = data["current_password"]
+        if not current_user.check_password(
+                current_pass) and (
+                current_user.password != current_pass):
+            raise ValidationError("Текущий пароль не верный")
 
-            current_pass = data["current_password"]
-            if not current_user.check_password(
-                    current_pass) and (
-                    current_user.password != current_pass):
-                raise ValidationError("Текущий пароль не верный")
-
-            current_user.set_password(data["new_password"])
-            current_user.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        current_user.set_password(data["new_password"])
+        current_user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserListCreateView(ModelViewSet):
