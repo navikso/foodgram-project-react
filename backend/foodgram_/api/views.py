@@ -144,8 +144,7 @@ class RecipeListView(APIView):
                 is_in_shopping_cart=Exists(
                     ShoppingList.objects.get(
                         user_id=request.user.id,
-                    ).recipes.filter(id=OuterRef("id")))
-                )
+                    ).recipes.filter(id=OuterRef("id"))))
 
         paginator = self.pagination_class()
         paginated_recipes = paginator.paginate_queryset(
