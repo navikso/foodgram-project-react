@@ -1,6 +1,6 @@
 import json
 from json import JSONDecodeError
-
+from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,25 +34,33 @@ from models_app.models import (
 )
 from .serializers import (
     UserGetSerializer,
-    UserSmallSerializer
+    UserSmallSerializer,
 )
 from users.models import User
 
 
 class FavoriteCreateDeleteView(APIView):
-    permission_classes = (UserAccessPermission,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         recipe = get_object_or_404(Recipe, id=kwargs["id"])
+        user = request.user
+        # data = request.data if not isinstance(
+        #     request.data, QueryDict) else request.data.dict()
+        
+        serializer = FavoriteShowSerializer(
+            data=request.data,
+            context={'recipe': recipe})
+        serializer.is_valid(raise_exception=True)
 
-        if Favorites.objects.filter(
-                user=request.user,
-                recipe=recipe
-        ).exists():
-            raise ValidationError("Рецепт уже находится в избранном")
+        # if Favorites.objects.filter(
+        #         user=request.user,
+        #         recipe=recipe
+        # ).exists():
+        #     raise ValidationError("Рецепт уже находится в избранном")
 
         Favorites.objects.create(
-            user=request.user,
+            user=user,
             recipe=recipe
         )
         return Response(
@@ -61,17 +69,14 @@ class FavoriteCreateDeleteView(APIView):
         )
 
     def delete(self, request, *args, **kwargs):
-        try:
-            recipe = get_object_or_404(Recipe, id=kwargs["id"])
-        except Recipe.DoesNotExist:
-            raise ValidationError("Рецепта не существует")
+        recipe = get_object_or_404(Recipe, id=kwargs["id"])
 
         if not Favorites.objects.filter(
                 recipe=recipe,
                 user=request.user
         ).exists():
             raise ValidationError("Рецепта нет в избранном")
-        Favorites.objects.get(recipe=recipe, user=request.user).delete()
+        get_object_or_404(Favorites, recipe=recipe, user=request.user).delete()
         return Response(
             {"INFO": "Рецепт успешно удален из избранного"},
             status=status.HTTP_204_NO_CONTENT
@@ -110,7 +115,8 @@ class RecipeListView(APIView):
 
         is_in_shopping_cart = request.GET.get("is_in_shopping_cart")
         if is_in_shopping_cart and self.request.user.is_authenticated:
-            shopping_list = ShoppingList.objects.get_or_create(
+            shopping_list = get_object_or_404(
+                ShoppingList,
                 user=self.request.user
             )[0]
 
@@ -142,7 +148,8 @@ class RecipeListView(APIView):
                     )
                 ),
                 is_in_shopping_cart=Exists(
-                    ShoppingList.objects.get(
+                    get_object_or_404(
+                        ShoppingList,
                         user_id=request.user.id,
                     ).recipes.filter(id=OuterRef("id"))))
 
@@ -287,10 +294,8 @@ class RecipeGetDeleteUpdateView(APIView):
                         status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
-        try:
-            recipe = get_object_or_404(Recipe, id=kwargs["id"])
-        except Recipe.DoesNotExist:
-            raise NotFound({"detail": "Страница не найдена."})
+        recipe = get_object_or_404(Recipe, id=kwargs["id"])
+
         if request.user != recipe.author:
             raise PermissionDenied(
                 "У вас недостаточно прав для "
@@ -320,8 +325,8 @@ class RecipeGetDeleteUpdateView(APIView):
                 )
             try:
                 ingredient_list.append(
-                    [Ingredient.objects.get(id=element["id"]),
-                     element["amount"]])
+                    (Ingredient.objects.get(id=element["id"]),
+                     element["amount"]))
             except ObjectDoesNotExist:
                 raise NotFound(
                     "Страница не найдена. "
@@ -341,10 +346,8 @@ class RecipeGetDeleteUpdateView(APIView):
                 raise ValidationError(
                     {"detail": f"{field} обязательное поле"})
 
-        try:
-            recipe = get_object_or_404(Recipe, id=kwargs["id"])
-        except Recipe.DoesNotExist:
-            raise NotFound({"detail": "Страница не найдена."})
+        recipe = get_object_or_404(Recipe, id=kwargs["id"])
+
         if recipe.author != request.user:
             raise PermissionDenied({
                 "detail": "У вас недостаточно прав "
@@ -391,14 +394,10 @@ class ShoppingCreateDeleteView(APIView):
                         status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        try:
-            shopping_list = ShoppingList.objects.get(
-                user=request.user)
-        except Recipe.DoesNotExist:
-            raise NotFound(
-                "Учетные данные не были предоставлены. "
-                "(В корзине пусто)"
-            )
+        shopping_list = get_object_or_404(
+            ShoppingList,
+            user=request.user)
+
         try:
             recipe = shopping_list.recipes.get(id=kwargs["id"])
         except Recipe.DoesNotExist:
@@ -459,10 +458,8 @@ class SubscriptionCreateDeleteView(APIView):
                 user).data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        try:
-            subscription = get_object_or_404(Subscription, user=request.user)
-        except Subscription.DoesNotExist:
-            raise NotFound({"detail": "Страница не найдена."})
+        subscription = get_object_or_404(Subscription, user=request.user)
+
         try:
             user = User.objects.get(id=kwargs["id"])
         except User.DoesNotExist:
@@ -501,8 +498,9 @@ class TokenGetView(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data if not isinstance(
             request.data, QueryDict) else request.data.dict()
-        user = User.objects.get(email=data["email"])
-        key = Token.objects.get_or_create(user=user)[0].key
+        # user = User.objects.get(email=data["email"])
+        user = get_object_or_404(User, id=request.user.id)
+        key = Token.objects.get_or_create(user=user).key
         if user.check_password(
                 data["password"]
         ) or user.password == data["password"]:
@@ -512,9 +510,10 @@ class TokenGetView(APIView):
 
 
 class TokenDeleteView(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        Token.objects.get(user=request.user).delete()
+        get_object_or_404(Token, user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -525,13 +524,10 @@ class UserSetPasswordView(APIView):
         current_user = request.user
         data = request.data if not isinstance(
             request.data, QueryDict) else request.data.dict()
-        serializer = UserSetPasswordSerializer(data=data)
+        serializer = UserSetPasswordSerializer(
+            data=request.data,
+            context={'user': request.user})
         serializer.is_valid(raise_exception=True)
-        current_pass = data["current_password"]
-        if not current_user.check_password(
-                current_pass) and (
-                current_user.password != current_pass):
-            raise ValidationError("Текущий пароль не верный")
 
         current_user.set_password(data["new_password"])
         current_user.save()
@@ -547,22 +543,18 @@ class UserListCreateView(ModelViewSet):
     def post(self, request, *args, **kwargs):
         data = request.data if not isinstance(
             request.data, QueryDict) else request.data.dict()
-        for field in (
-                "email", "username", "first_name", "last_name",
-                "password",
-        ):
-            try:
-                data[field]
-            except KeyError:
-                raise ValidationError(
-                    {"error": f"{field} не заполнено"})
+        serializer = UserSmallSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         user = User.objects.create(
-            email=data["email"],
-            username=data["username"],
-            first_name=data["first_name"],
-            last_name=data["last_name"],
-            password=data["password"]
-        )
+                email=data["email"],
+                username=data["username"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                password=data["password"]
+            )
+
+        user = get_object_or_404(user, email=data["email"])
         Token.objects.create(user=user)
         return Response(
             UserSmallSerializer(user).data,
@@ -573,10 +565,8 @@ class UserGetView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        try:
-            user = get_object_or_404(User, id=kwargs["id"])
-        except User.DoesNotExist:
-            raise NotFound("Пользователь не найден.")
+        user = get_object_or_404(User, id=kwargs["id"])
+
         return Response(
             UserGetSerializer(user).data, status=status.HTTP_200_OK)
 

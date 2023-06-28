@@ -4,23 +4,6 @@ from django.db import models
 from users.models import User
 
 
-class Favorites(models.Model):
-    recipe = models.ForeignKey(
-        "Recipe", on_delete=models.CASCADE,
-        related_name="list_recipes_favorites", verbose_name="Рецепт")
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name="Пользователь")
-
-    class Meta:
-        db_table = "favorites"
-        unique_together = ("recipe", "user")
-        verbose_name = "Избранное"
-        verbose_name_plural = "Избранные"
-
-    def __str__(self):
-        return f"{self.recipe.name} {self.user.username}"
-
-
 class Ingredient(models.Model):
     name = models.CharField(
         max_length=255, verbose_name="Название ингредиента")
@@ -82,6 +65,23 @@ class Recipe(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.name}"
+
+
+class Favorites(models.Model):
+    recipe = models.ForeignKey(
+        "Recipe", on_delete=models.CASCADE,
+        related_name="list_recipes_favorites", verbose_name="Рецепт")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, verbose_name="Пользователь")
+
+    class Meta:
+        db_table = "favorites"
+        unique_together = ("recipe", "user")
+        verbose_name = "Избранное"
+        verbose_name_plural = "Избранные"
+
+    def __str__(self):
+        return f"{self.recipe.name} {self.user.username}"
 
 
 class ShoppingList(models.Model):
