@@ -1,15 +1,11 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
 
-from api.views import (
-    UserListCreateView,
-    UserGetView,
-    UserGetMeView,
-    UserSetPasswordView
-)
+from api.views import UserViewSet
+
+router = routers.DefaultRouter()
+router.register("users", UserViewSet, basename="users")
 
 urlpatterns = [
-    path("", UserListCreateView.as_view({"get": "list"})),
-    path("<int:id>/", UserGetView.as_view()),
-    path("me/", UserGetMeView.as_view()),
-    path("set_password/", UserSetPasswordView.as_view()),
+    path("", include(router.urls)),
 ]

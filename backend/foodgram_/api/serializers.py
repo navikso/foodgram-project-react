@@ -1,15 +1,14 @@
-from django.contrib.auth.hashers import check_password
 from rest_framework import serializers
-from rest_framework.validators import ValidationError, UniqueTogetherValidator
+from rest_framework.generics import get_object_or_404
+from rest_framework.validators import ValidationError
 
 from models_app.models import (
-    Ingredient, IngredientAmount, Recipe,
-    Favorites, Subscription, Tag)
+    Favorites, Ingredient, IngredientAmount, Recipe, Subscription, Tag
+)
 from users.models import User
-from conf.settings.django import env
 
 
-class UserGetSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -43,8 +42,10 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientAmountListSerializer(serializers.ModelSerializer):
-    measurement_unit = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
+    measurement_unit = serializers.CharField(
+        source="ingredient.measurement_unit"
+    )
+    name = serializers.CharField(source="ingredient.name")
 
     class Meta:
         model = IngredientAmount
@@ -55,48 +56,26 @@ class IngredientAmountListSerializer(serializers.ModelSerializer):
             "amount",
         )
 
-    def get_measurement_unit(self, obj):
-        return obj.ingredient.measurement_unit
 
-    def get_name(self, obj):
-        return obj.ingredient.name
+class ShoppingListSerializer(serializers.Serializer):
 
-
-class SubscriptionRecipeListSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Recipe
-        fields = (
-            "id",
-            "name",
-            "image",
-            "cooking_time",
-        )
-
-    def get_image(self, obj):
-        return f"{env('DOMAIN')}{obj.image.url}"
+    def validate(self, attrs):
+        if self.context["method"] == "post":
+            if self.context["shopping_list"].recipes.filter(
+                    id=self.context["id"]
+            ).exists():
+                raise ValidationError(
+                    {"errors": "Рецепт уже есть в списке покупок"})
+        elif self.context["method"] == "delete":
+            if not self.context["shopping_list"].recipes.filter(
+                    id=self.context["id"]
+            ).exists():
+                raise ValidationError(
+                    {"errors": "Рецепт не находится в списке покупок"})
+        return attrs
 
 
-class RecipeListSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Recipe
-        fields = (
-            "id",
-            "tags",
-            "name",
-            "image",
-            "text",
-            "cooking_time",
-        )
-
-    def get_image(self, obj):
-        return f"{env('DOMAIN')}{obj.image.url}"
-
-
-class TagListSerializer(serializers.ModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = (
@@ -107,107 +86,98 @@ class TagListSerializer(serializers.ModelSerializer):
         )
 
 
-class RecipeShowSerializer(serializers.ModelSerializer):
-    ingredients = IngredientAmountListSerializer(
-        read_only=True,
-        many=True
-    )
-    tags = TagListSerializer(read_only=True, many=True)
-    author = UserGetSerializer(read_only=True)
-    is_favorited = serializers.ReadOnlyField()
-    is_in_shopping_cart = serializers.ReadOnlyField()
+class TokenLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if self.context["user"].password != self.context["password"]:
+            raise ValidationError({
+                "errors": "Введен не верный пароль"
+            })
+        return attrs
+
+
+class FavoriteSerializer(serializers.Serializer):
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if self.context["method"] == "post":
+            if Favorites.objects.filter(
+                    user=self.context["user"],
+                    recipe=self.context["recipe"]
+            ):
+                raise ValidationError(
+                    {"errors": "Рецепт уже в избранном"})
+        elif self.context["method"] == "delete":
+            if not Favorites.objects.filter(
+                    user=self.context["user"],
+                    recipe=self.context["recipe"]
+            ):
+                raise ValidationError(
+                    {"errors": "Рецепт не находится в избранном"})
+        return attrs
+
+
+class SmallRecipeSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = (
             "id",
-            "tags",
-            "author",
-            "ingredients",
-            "is_favorited",
-            "is_in_shopping_cart",
             "name",
             "image",
-            "text",
             "cooking_time"
         )
 
     def get_image(self, obj):
-        return f"{env('DOMAIN')}{obj.image.url}"
-
-    # def validate(self, data):
-    #     data = super().validate(data)
-    #     # if not self.context['data'].get('image', None):
-    #     #     raise ValidationError({'image': 'Обязательное поле.'})
-
-    #     # if self.context['data'].get('ingredients', None):
-    #     data['ingredients'] = []
-    #     for ingredient in json.loads(self.context['data']['ingredients']):
-    #         try:
-    #             ingredient_object = Ingredient.objects.get(
-    #                 id=ingredient['id']
-    #             )
-    #         except Ingredient.DoesNotExist:
-    #             raise NotFound({'detail': 'Страница не найдена.'})
-    #         if ingredient['amount'] < 0:
-    #             raise ValidationError(
-    #                 {'detail': 'Количество ингредиента '
-    #                             'не может быть <= 0'}
-    #             )
-    #         data['ingredients'].append(
-    #             [ingredient_object, ingredient['amount']]
-    #         )
-    #     # else:
-    #     #     raise ValidationError({'ingredients': 'Обязательное поле.'})
-
-    #     # if self.context['data'].get('tags', None):
-    #     data['tags'] = []
-    #     for tag_id in self.context['data']['tags'].split(','):
-    #         try:
-    #             data['tags'].append(Tag.objects.get(id=tag_id))
-    #         except Tag.DoesNotExist:
-    #             raise NotFound(
-    #                 {
-    #                     'detail': f'Страница не найдена.(Тег. id:{tag_id})'
-    #                 }
-    #             )
-    #     # else:
-    #     #     raise ValidationError({'tags': 'Обязательное поле.'})
+        return obj.get_image()
 
 
-class FavoriteShowSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Recipe
-        fields = (
-            "id",
-            "name",
-            "image",
-            "cooking_time"
-        )
-        # validators = [
-        #     UniqueTogetherValidator(
-        #         queryset=Favorites.objects.all(),
-        #         fields=("favorites__recipe__id", "favorites__user__id")
-        #     )
-        # ]
+class SubscriptionUserSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        if self.context['recipe'] == attrs["recipe"]:
-            raise ValidationError(
-                {"current_password": "Рецепт уже в избранном"})
+        if self.context["method"] == "post":
+            if self.context["current_user"] == self.context["user"]:
+                raise ValidationError(
+                    {
+                        "errors": "Вы не можете подписаться на самого себя"
+                    }
+                )
+            if self.context["user"] in self.context[
+                "subscription"
+            ].authors.all():
+                raise ValidationError(
+                    {
+                        "errors": "Вы уже подписаны на этого пользователя"
+                    }
+                )
+        elif self.context["method"] == "delete":
+            if self.context["user"] not in self.context[
+                "subscription"
+            ].authors.all():
+                raise ValidationError(
+                    {
+                        "errors": "Вы не подписаны на этого пользователя"
+                    }
+                )
         return attrs
 
 
-class SubscriptionUserGetSerializer(serializers.ModelSerializer):
-    recipes = serializers.SerializerMethodField(read_only=True)
+class SubscriptionSerializer(serializers.ModelSerializer):
+    recipes = SmallRecipeSerializer(
+        source="recipes_list_user",
+        read_only=True,
+        many=True
+    )
     recipes_count = serializers.IntegerField(
         source="user_recipes.count",
         read_only=True
     )
-    is_subscribed = serializers.SerializerMethodField()
+    is_subscribed = serializers.BooleanField()
 
     class Meta:
         model = User
@@ -221,19 +191,6 @@ class SubscriptionUserGetSerializer(serializers.ModelSerializer):
             "recipes",
             "recipes_count"
         )
-
-    def get_recipes(self, obj):
-        return SubscriptionRecipeListSerializer(
-            Recipe.objects.filter(author=obj), many=True
-        ).data
-
-    def get_is_subscribed(self, obj):
-        user = self.context.get("user")
-        if user and user.is_authenticated:
-            return Subscription.objects.get_or_create(
-                user=self.context["user"]
-            ).authors.filter(id=obj.id)
-        return False
 
 
 class UserSmallSerializer(serializers.ModelSerializer):
@@ -264,7 +221,69 @@ class UserSetPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        if not self.context['user'].check_password(attrs["current_password"]):
+        if not self.context["user"].check_password(attrs["current_password"]):
             raise ValidationError(
                 {"current_password": "Неверный пароль"})
         return attrs
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    ingredients = IngredientAmountListSerializer(read_only=True, many=True)
+    tags = TagSerializer(read_only=True, many=True)
+    author = UserSerializer(read_only=True)
+    image = serializers.SerializerMethodField()
+    is_favorited = serializers.BooleanField(read_only=True, default=False)
+    is_in_shopping_cart = serializers.BooleanField(
+        read_only=True,
+        default=False
+    )
+
+    class Meta:
+        model = Recipe
+        fields = (
+            "id",
+            "tags",
+            "author",
+            "ingredients",
+            "is_favorited",
+            "is_in_shopping_cart",
+            "name",
+            "image",
+            "text",
+            "cooking_time"
+        )
+
+    def get_image(self, obj):
+        return obj.get_image()
+
+    def validate(self, data):
+        data = super().validate(data)
+        if not self.context["data"].get("image", None):
+            raise ValidationError({"image": "Обязательное поле."})
+
+        if self.context["data"].get("ingredients", None):
+            data["ingredients"] = []
+            for ingredient in self.context["data"]["ingredients"]:
+                ingredient_object = get_object_or_404(
+                    Ingredient,
+                    id=ingredient["id"]
+                )
+                if int(ingredient["amount"]) < 0:
+                    raise ValidationError(
+                        {"detail": "Количество ингредиента "
+                                   "не может быть <= 0"}
+                    )
+                data["ingredients"].append(
+                    (ingredient_object, ingredient["amount"])
+                )
+        else:
+            raise ValidationError({"ingredients": "Обязательное поле."})
+
+        if self.context["data"].get("tags", None):
+            data["tags"] = []
+            for tag_id in self.context["data"]["tags"]:
+                data["tags"].append(get_object_or_404(Tag, id=tag_id))
+        else:
+            raise ValidationError({"tags": "Обязательное поле."})
+
+        return data

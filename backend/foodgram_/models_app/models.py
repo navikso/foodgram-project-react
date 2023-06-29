@@ -1,6 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from conf.settings.django import env
 from users.models import User
 
 
@@ -65,6 +66,9 @@ class Recipe(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.name}"
+
+    def get_image(self):
+        return f"{env('DOMAIN')}{self.image.url}"
 
 
 class Favorites(models.Model):

@@ -1,37 +1,19 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
+from api.views import (
+    IngredientViewSet,
+    RecipeViewSet,
+    TagViewSet,
+    TokenViewSet,
+)
 
-from api.views import (IngredientListView, IngredientGetView,
-                       TagListView, RecipeListView,
-                       RecipeCreateView,
-                       RecipeDownloadView, FavoriteCreateDeleteView,
-                       TagGetView, ShoppingCreateDeleteView,
-                       RecipeGetDeleteUpdateView, TokenGetView,
-                       TokenDeleteView, SubscriptionCreateDeleteView,
-                       SubscriptionListView
-                       )
+router = routers.DefaultRouter()
+router.register("ingredients", IngredientViewSet, basename="ingredients")
+router.register("tags", TagViewSet, basename="tags")
+router.register("recipes", RecipeViewSet, basename="recipes")
+router.register("auth/token", TokenViewSet, basename="auth")
 
 urlpatterns = [
-    path("ingredients/", IngredientListView.as_view()),
-    path("ingredients/<int:id>/", IngredientGetView.as_view()),
-
-    path("tags/", TagListView.as_view()),
-    path("tags/<int:id>/", TagGetView.as_view()),
-
-    path("recipes/", RecipeListView.as_view()),
-    path("recipes/", RecipeCreateView.as_view()),
-    path("recipes/<int:id>/favorite/",
-         FavoriteCreateDeleteView.as_view()),
-    path("recipes/download_shopping_cart/",
-         RecipeDownloadView.as_view()),
-    path("recipes/<int:id>/", RecipeGetDeleteUpdateView.as_view()),
-    path("recipes/<int:id>/shopping_cart/",
-         ShoppingCreateDeleteView.as_view()),
-
-    path("auth/token/logout/", TokenDeleteView.as_view()),
-    path("auth/token/login/", TokenGetView.as_view()),
-
-    path("users/<int:id>/subscribe/",
-         SubscriptionCreateDeleteView.as_view()),
-    path("users/subscriptions/",
-         SubscriptionListView.as_view({"get": "list"})),
+    path("", include(router.urls)),
+    path("", include("users.urls")),
 ]
