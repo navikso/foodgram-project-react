@@ -1,7 +1,6 @@
+from conf.settings.django import env
 from django.core.validators import MinValueValidator
 from django.db import models
-
-from conf.settings.django import env
 from users.models import User
 
 

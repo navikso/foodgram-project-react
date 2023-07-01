@@ -1,16 +1,10 @@
-from models_app.models import (
-    Favorites,
-    Ingredient,
-    IngredientAmount,
-    Recipe,
-    ShoppingList,
-    Subscription,
-    Tag
-)
 from django.contrib import admin
 from django.shortcuts import redirect, render
 from django.urls import path
 from users.models import User
+
+from models_app.models import (Favorites, Ingredient, IngredientAmount, Recipe,
+                               ShoppingList, Subscription, Tag)
 
 
 @admin.register(Favorites)
