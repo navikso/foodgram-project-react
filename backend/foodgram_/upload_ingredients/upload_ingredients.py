@@ -1,8 +1,7 @@
 import json
 import os
-from models_app.models import Ingredient
-
 from conf.settings.django import BASE_DIR
+from models_app.models import Ingredient
 
 
 def upload_ingredients():
