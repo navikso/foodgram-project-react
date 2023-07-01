@@ -1,20 +1,23 @@
 from rest_framework import permissions
+from rest_framework.permissions import SAFE_METHODS
 
 
 class BlockPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        return not getattr(request.user, "is_blocked", False)
+        return not request.user.is_authenticated or request.user.is_active
 
 
 class RecipePermission(permissions.BasePermission):
+
     def has_permission(self, request, view):
-        if request.method.lower() == "post":
+        if request.method not in SAFE_METHODS:
             return request.user.is_authenticated
         return True
 
 
 class RecipeObjectPermission(permissions.BasePermission):
+
     def has_object_permission(self, request, view, obj):
         if request.method.lower() in ("delete", "patch",):
             return obj.author == request.user and request.user.is_authenticated
@@ -22,14 +25,15 @@ class RecipeObjectPermission(permissions.BasePermission):
 
 
 class UserPermission(permissions.BasePermission):
+
     def has_permission(self, request, view):
         if request.method.lower() == "get" and view.action == ("me",):
             return request.user.is_authenticated
-        elif view.action == (
+        if view.action == [
             "set_password",
             "subscriptions",
             "subscribe"
-        ):
+        ]:
             return request.user.is_authenticated
         return True
 

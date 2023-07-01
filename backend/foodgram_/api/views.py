@@ -1,4 +1,5 @@
 import base64
+import io
 
 from django.core.files.base import ContentFile
 from django.db.models import F, Exists, OuterRef, Sum, Value
@@ -134,7 +135,7 @@ class RecipeViewSet(ModelViewSet):
                 SmallRecipeSerializer(recipe).data,
                 status=status.HTTP_201_CREATED
             )
-        elif request.method == "DELETE":
+        if request.method == "DELETE":
             serializer = FavoriteSerializer(
                 instance=recipe,
                 data=request.data,
@@ -152,7 +153,7 @@ class RecipeViewSet(ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        methods=("get"),
+        methods=("get",),
         detail=False,
     )
     def download_shopping_cart(self, request):
@@ -167,17 +168,20 @@ class RecipeViewSet(ModelViewSet):
             item["name_measurement_unit"]: item["amount"] for (
                 item) in data if bool(item["amount"])}
 
-        with open(
-                f"recipe/list-ingredients-{request.user.username}.txt",
-                "w+"
+        buffer = io.BytesIO()
+        with io.TextIOWrapper(
+                buffer, encoding='utf-8', write_through=True
         ) as file:
             for key, value in data_ingredients.items():
                 file.write(f"{key} - {value}\n")
-        return HttpResponse(
-            open(
-                f"recipe/list-ingredients-{request.user.username}.txt"
-            ),
-            content_type="text/plain")
+            response = HttpResponse(
+                buffer.getvalue(),
+                content_type='text/plain'
+            )
+            response[
+                'Content-Disposition'
+            ] = f'attachment; filename=list-ingredients.txt'
+            return response
 
     @action(
         methods=("post", "delete"),
@@ -199,7 +203,7 @@ class RecipeViewSet(ModelViewSet):
             shopping_list.recipes.add(recipe)
             return Response(SmallRecipeSerializer(recipe).data,
                             status=status.HTTP_201_CREATED)
-        elif request.method == "DELETE":
+        if request.method == "DELETE":
             serializer = ShoppingListSerializer(
                 instance=recipe,
                 data=request.data,
@@ -213,75 +217,6 @@ class RecipeViewSet(ModelViewSet):
             shopping_list.recipes.remove(recipe)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def destroy(self, request, *args, **kwargs):
-        self.perform_destroy(self.get_object())
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def update(self, request, *args, **kwargs):
-        recipe = self.get_object()
-        serializer = RecipeSerializer(
-            instance=recipe,
-            data=request.data,
-            partial=True,
-            context={
-                "data": request.data
-            }
-        )
-        serializer.is_valid(raise_exception=True)
-        recipe.name = request.data["name"]
-        recipe.image = self.get_image_base64(recipe.id)
-        recipe.text = request.data["text"]
-        recipe.cooking_time = request.data["cooking_time"]
-        recipe.save()
-        for ingredient, amount in serializer.validated_data["ingredients"]:
-            recipe.ingredients.add(
-                IngredientAmount.objects.create(
-                    ingredient=ingredient, amount=amount
-                )
-            )
-        for tag in serializer.validated_data["tags"]:
-            recipe.tags.add(tag)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def get_image_base64(self, recipe_id):
-        format_image, imgstr = self.request.data["image"].split(";base64,")
-        ext = format_image.split('/')[-1]
-        return ContentFile(
-            base64.b64decode(imgstr),
-            name=f"recipe_image_{recipe_id}." + ext
-        )
-
-    def create(self, request, *args, **kwargs):
-        serializer = RecipeSerializer(data=request.data, context={
-            "data": request.data
-        })
-        serializer.is_valid(raise_exception=True)
-        recipe = Recipe.objects.create(
-            name=request.data["name"],
-            text=request.data["text"],
-            cooking_time=request.data["cooking_time"],
-            author=request.user
-        )
-        recipe.image = self.get_image_base64(recipe.id)
-        recipe.save()
-        for ingredient, amount in serializer.validated_data["ingredients"]:
-            recipe.ingredients.add(
-                IngredientAmount.objects.create(
-                    ingredient=ingredient, amount=amount
-                )
-            )
-        for tag in serializer.validated_data["tags"]:
-            recipe.tags.add(tag)
-        recipe.is_favorited = Favorites.objects.filter(
-            user=request.user, recipe=recipe).exists()
-        recipe.is_in_shopping_cart = get_object_or_404(
-            ShoppingList, user=request.user
-        ).recipes.filter(id=recipe.id).exists()
-        return Response(
-            RecipeSerializer(recipe).data,
-            status=status.HTTP_201_CREATED
-        )
-
 
 class TagViewSet(ModelViewSet):
     queryset = Tag.objects.all()
@@ -289,10 +224,10 @@ class TagViewSet(ModelViewSet):
 
 
 class TokenViewSet(ModelViewSet):
-    permission_classes = (BlockPermission, )
+    permission_classes = (BlockPermission,)
 
     @action(
-        methods=["post"],
+        methods=("post",),
         detail=False,
     )
     def login(self, request):
@@ -312,7 +247,7 @@ class TokenViewSet(ModelViewSet):
         }, status=status.HTTP_201_CREATED)
 
     @action(
-        methods=["post"],
+        methods=("post",),
         detail=False,
         permission_classes=[IsAuthenticated, ]
     )
@@ -328,7 +263,7 @@ class UserViewSet(ModelViewSet):
     permission_classes = (BlockPermission, UserPermission)
 
     @action(
-        methods=["post"],
+        methods=("post",),
         detail=False,
     )
     def set_password(self, request):
@@ -339,12 +274,12 @@ class UserViewSet(ModelViewSet):
             }
         )
         serializer.is_valid(raise_exception=True)
-        request.user.set_password(request.data["new_password"])
+        request.user.password = request.data["new_password"]
         request.user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        methods=("get"),
+        methods=("get",),
         detail=False,
     )
     def me(self, request):
@@ -373,7 +308,7 @@ class UserViewSet(ModelViewSet):
         )
 
     @action(
-        methods=("get"),
+        methods=("get",),
         detail=False,
         pagination_class=PageNumberPagination,
     )
