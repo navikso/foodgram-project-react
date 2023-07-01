@@ -1,3 +1,7 @@
+# workflow-status
+
+[![build-test](https://github.com/navikso/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/navikso/foodgram-project-react/actions/workflows/main.yml)
+
 # «Продуктовый помощник» 
 
 #### _Описание_
@@ -41,7 +45,7 @@ http://158.160.37.68/tags - страница с перечнем всех дос
 
 _Администрирование:_
 
-По http://158.160.37.68/admin доступна страница администрирования. 
+По http://158.160.37.68:8081/admin доступна страница администрирования. 
 
 Данные суперпользователя:
 Логин: root
