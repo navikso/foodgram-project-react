@@ -1,10 +1,9 @@
 import base64
 
 from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
 from rest_framework.validators import ValidationError
-
 from models_app.models import (
     Favorites, Ingredient, IngredientAmount, Recipe, Subscription, Tag
 )
@@ -304,13 +303,13 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.image = self.get_image_base64(instance.id)
         instance.save()
         ingredients_data = validated_data.get("ingredients")
-        ingredients_data.full_clean()
         ingredients = (
             IngredientAmount.objects.create(ingredient=ingredient,
                                             amount=amount)
             for ingredient, amount in ingredients_data
         )
         instance.ingredients.set(ingredients)
+        print(ingredients_data)
         tags_data = validated_data.get("tags")
         if tags_data:
             instance.tags.set(tags_data)

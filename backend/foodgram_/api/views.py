@@ -1,7 +1,5 @@
-import base64
 import io
 
-from django.core.files.base import ContentFile
 from django.db.models import F, Exists, OuterRef, Sum, Value
 from django.db.models.functions import Concat
 from django.http import HttpResponse
@@ -35,7 +33,6 @@ from api.serializers import (
 from models_app.models import (
     Favorites,
     Ingredient,
-    IngredientAmount,
     Recipe,
     ShoppingList,
     Subscription,
@@ -170,17 +167,17 @@ class RecipeViewSet(ModelViewSet):
 
         buffer = io.BytesIO()
         with io.TextIOWrapper(
-                buffer, encoding='utf-8', write_through=True
+                buffer, encoding="utf-8", write_through=True
         ) as file:
             for key, value in data_ingredients.items():
                 file.write(f"{key} - {value}\n")
             response = HttpResponse(
                 buffer.getvalue(),
-                content_type='text/plain'
+                content_type="text/plain"
             )
             response[
-                'Content-Disposition'
-            ] = f'attachment; filename=list-ingredients.txt'
+                "Content-Disposition"
+            ] = "attachment; filename=list-ingredients.txt"
             return response
 
     @action(
