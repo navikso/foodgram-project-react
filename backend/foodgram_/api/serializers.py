@@ -2,6 +2,10 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
+
+from rest_framework import serializers
+from rest_framework.validators import ValidationError
+
 from models_app.models import (
     Favorites,
     Ingredient,
@@ -10,8 +14,6 @@ from models_app.models import (
     Subscription,
     Tag
 )
-from rest_framework import serializers
-from rest_framework.validators import ValidationError
 from users.models import User
 
 
