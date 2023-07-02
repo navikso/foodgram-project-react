@@ -309,7 +309,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             for ingredient, amount in ingredients_data
         )
         instance.ingredients.set(ingredients)
-        print(ingredients_data)
         tags_data = validated_data.get("tags")
         if tags_data:
             instance.tags.set(tags_data)
