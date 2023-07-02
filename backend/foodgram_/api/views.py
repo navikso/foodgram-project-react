@@ -4,7 +4,6 @@ from django.db.models import Exists, F, OuterRef, Sum, Value
 from django.db.models.functions import Concat
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -13,29 +12,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from api.permissions import (
-    BlockPermission, RecipeObjectPermission,
-    RecipePermission)
-from api.serializers import (
-    FavoriteSerializer,
-    IngredientSerializer,
-    RecipeSerializer,
-    ShoppingListSerializer,
-    SmallRecipeSerializer,
-    SubscriptionSerializer,
-    SubscriptionUserSerializer,
-    TagSerializer,
-    TokenLoginSerializer,
-    UserSerializer,
-    UserSetPasswordSerializer,
-    UserSmallSerializer)
-from models_app.models import (
-    Favorites,
-    Ingredient,
-    Recipe,
-    ShoppingList,
-    Subscription, Tag
-)
+from api.permissions import (BlockPermission, RecipeObjectPermission,
+                             RecipePermission)
+from api.serializers import (FavoriteSerializer, IngredientSerializer,
+                             RecipeSerializer, ShoppingListSerializer,
+                             SmallRecipeSerializer, SubscriptionSerializer,
+                             SubscriptionUserSerializer, TagSerializer,
+                             TokenLoginSerializer, UserSerializer,
+                             UserSetPasswordSerializer, UserSmallSerializer)
+from models_app.models import (Favorites, Ingredient, Recipe, ShoppingList,
+                               Subscription, Tag)
 from users.models import User
 
 
