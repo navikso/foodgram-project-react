@@ -92,6 +92,7 @@ class RecipeViewSet(ModelViewSet):
                     ).recipes.filter(id=OuterRef("id"))
                 )
             )
+            return None
         return recipes
 
     @action(

@@ -116,6 +116,7 @@ class FavoriteSerializer(serializers.Serializer):
             ):
                 raise ValidationError(
                     {"errors": "Рецепт уже в избранном"})
+            return None
         if self.context["method"] == "delete":
             if not Favorites.objects.filter(
                     user=user,
@@ -123,6 +124,7 @@ class FavoriteSerializer(serializers.Serializer):
             ):
                 raise ValidationError(
                     {"errors": "Рецепт не находится в избранном"})
+            return None
         return attrs
 
 
@@ -170,6 +172,7 @@ class SubscriptionUserSerializer(serializers.Serializer):
                         "errors": "Вы не подписаны на этого пользователя"
                     }
                 )
+            return None
         return attrs
 
 
