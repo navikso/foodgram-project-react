@@ -14,15 +14,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from users.models import User
-
-from api.permissions import (BlockPermission, RecipeObjectPermission,
-                             RecipePermission, UserPermission)
-from api.serializers import (FavoriteSerializer, IngredientSerializer,
-                             RecipeSerializer, ShoppingListSerializer,
-                             SmallRecipeSerializer, SubscriptionSerializer,
-                             SubscriptionUserSerializer, TagSerializer,
-                             TokenLoginSerializer, UserSerializer,
-                             UserSetPasswordSerializer, UserSmallSerializer)
+from api.permissions import (
+    BlockPermission, RecipeObjectPermission,
+    RecipePermission, UserPermission)
+from api.serializers import (
+    FavoriteSerializer, IngredientSerializer,
+    RecipeSerializer, ShoppingListSerializer,
+    SmallRecipeSerializer, SubscriptionSerializer,
+    SubscriptionUserSerializer, TagSerializer,
+    TokenLoginSerializer, UserSerializer,
+    UserSetPasswordSerializer, UserSmallSerializer)
 
 
 class IngredientViewSet(ModelViewSet):
