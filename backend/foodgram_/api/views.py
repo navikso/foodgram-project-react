@@ -15,7 +15,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from api.permissions import (
     BlockPermission, RecipeObjectPermission,
-    RecipePermission, UserPermission)
+    RecipePermission)
 from api.serializers import (
     FavoriteSerializer,
     IngredientSerializer,
@@ -164,8 +164,7 @@ class RecipeViewSet(ModelViewSet):
             "name_measurement_unit", "amount")
         data_ingredients = {
             item["name_measurement_unit"]: item["amount"] for (
-                item) in data if bool(item["amount"])
-            }
+                item) in data if bool(item["amount"])}
 
         buffer = io.BytesIO()
         with io.TextIOWrapper(
