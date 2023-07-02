@@ -342,7 +342,7 @@ class UserViewSet(ModelViewSet):
                 SubscriptionSerializer(user).data,
                 status=status.HTTP_201_CREATED
             )
-        elif request.method == "DELETE":
+        if request.method == "DELETE":
             serializer = SubscriptionUserSerializer(
                 data=request.data,
                 context={
