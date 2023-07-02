@@ -304,8 +304,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.save()
         ingredients_data = validated_data.get("ingredients")
         ingredients = (
-            IngredientAmount.objects.create(ingredient=ingredient,
-                                            amount=amount)
+            IngredientAmount.objects.get_or_create(
+                ingredient=ingredient,
+                amount=amount)
             for ingredient, amount in ingredients_data
         )
         instance.ingredients.set(ingredients)
