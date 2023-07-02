@@ -259,7 +259,7 @@ class UserViewSet(ModelViewSet):
     pagination_class = PageNumberPagination
     serializer_class = UserSerializer
     queryset = User.objects.all()
-    permission_classes = (BlockPermission, UserPermission)
+    permission_classes = (BlockPermission, IsAuthenticated)
 
     @action(
         methods=("post",),
