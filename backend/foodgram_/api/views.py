@@ -11,17 +11,20 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
-from api.permissions import (BlockPermission, RecipeObjectPermission,
-                             RecipePermission)
-from api.serializers import (FavoriteSerializer, IngredientSerializer,
-                             RecipeSerializer, ShoppingListSerializer,
-                             SmallRecipeSerializer, SubscriptionSerializer,
-                             SubscriptionUserSerializer, TagSerializer,
-                             TokenLoginSerializer, UserSerializer,
-                             UserSetPasswordSerializer, UserSmallSerializer)
-from models_app.models import (Favorites, Ingredient, Recipe, ShoppingList,
-                               Subscription, Tag)
+from api.permissions import (
+    BlockPermission, RecipeObjectPermission, RecipePermission
+)
+from api.serializers import (
+    FavoriteSerializer, IngredientSerializer,
+    RecipeSerializer, ShoppingListSerializer,
+    SmallRecipeSerializer, SubscriptionSerializer,
+    SubscriptionUserSerializer, TagSerializer,
+    TokenLoginSerializer, UserSerializer,
+    UserSetPasswordSerializer, UserSmallSerializer
+)
+from models_app.models import (
+    Favorites, Ingredient, Recipe, ShoppingList, Subscription, Tag
+)
 from users.models import User
 
 
