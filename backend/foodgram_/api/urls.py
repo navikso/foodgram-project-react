@@ -1,7 +1,11 @@
 from django.urls import include, path
 from rest_framework import routers
 from api.views import (
-    IngredientViewSet, RecipeViewSet, TagViewSet, TokenViewSet)
+    IngredientViewSet,
+    RecipeViewSet,
+    TagViewSet,
+    TokenViewSet
+)
 
 router = routers.DefaultRouter()
 router.register("ingredients", IngredientViewSet, basename="ingredients")

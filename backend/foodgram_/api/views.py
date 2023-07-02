@@ -18,12 +18,18 @@ from api.permissions import (
     BlockPermission, RecipeObjectPermission,
     RecipePermission, UserPermission)
 from api.serializers import (
-    FavoriteSerializer, IngredientSerializer,
-    RecipeSerializer, ShoppingListSerializer,
-    SmallRecipeSerializer, SubscriptionSerializer,
-    SubscriptionUserSerializer, TagSerializer,
-    TokenLoginSerializer, UserSerializer,
-    UserSetPasswordSerializer, UserSmallSerializer)
+    FavoriteSerializer,
+    IngredientSerializer,
+    RecipeSerializer,
+    ShoppingListSerializer,
+    SmallRecipeSerializer,
+    SubscriptionSerializer,
+    SubscriptionUserSerializer,
+    TagSerializer,
+    TokenLoginSerializer,
+    UserSerializer,
+    UserSetPasswordSerializer,
+    UserSmallSerializer)
 
 
 class IngredientViewSet(ModelViewSet):
@@ -90,7 +96,9 @@ class RecipeViewSet(ModelViewSet):
                     get_object_or_404(
                         ShoppingList,
                         user_id=self.request.user.id,
-                    ).recipes.filter(id=OuterRef("id"))))
+                    ).recipes.filter(id=OuterRef("id"))
+                )
+            )
         return recipes
 
     @action(
@@ -107,7 +115,8 @@ class RecipeViewSet(ModelViewSet):
                     "recipe": recipe,
                     "user": request.user,
                     "method": "post",
-                })
+                }
+            )
             serializer.is_valid(raise_exception=True)
             Favorites.objects.create(
                 user=request.user,
@@ -148,7 +157,8 @@ class RecipeViewSet(ModelViewSet):
             "name_measurement_unit", "amount")
         data_ingredients = {
             item["name_measurement_unit"]: item["amount"] for (
-                item) in data if bool(item["amount"])}
+                item) in data if bool(item["amount"])
+            }
 
         buffer = io.BytesIO()
         with io.TextIOWrapper(
