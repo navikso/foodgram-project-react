@@ -96,7 +96,7 @@ class TokenLoginSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        if self.context["user"].password != self.context["password"]:
+        if not self.context["user"].check_password(self.context["password"]):
             raise ValidationError({
                 "errors": "Введен не верный пароль"
             })
@@ -116,7 +116,6 @@ class FavoriteSerializer(serializers.Serializer):
             ):
                 raise ValidationError(
                     {"errors": "Рецепт уже в избранном"})
-            return None
         if self.context["method"] == "delete":
             if not Favorites.objects.filter(
                     user=user,
@@ -124,7 +123,6 @@ class FavoriteSerializer(serializers.Serializer):
             ):
                 raise ValidationError(
                     {"errors": "Рецепт не находится в избранном"})
-            return None
         return attrs
 
 
@@ -172,7 +170,6 @@ class SubscriptionUserSerializer(serializers.Serializer):
                         "errors": "Вы не подписаны на этого пользователя"
                     }
                 )
-            return None
         return attrs
 
 
@@ -218,7 +215,7 @@ class UserSmallSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        if self.email == attrs["email"]:
+        if User.objects.filter(email=attrs["email"]):
             raise ValidationError(
                 {"email": "Такой email уже зарегистрирован"})
         return attrs
@@ -230,7 +227,7 @@ class UserSetPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        if not self.context["user"].password == attrs["current_password"]:
+        if not self.context["user"].check_password(attrs["current_password"]):
             raise ValidationError(
                 {"current_password": "Неверный пароль"})
         return attrs
@@ -305,9 +302,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         if image_data:
             instance.image = self.get_image_base64(instance.id)
         instance.save()
-        ingredients_data = validated_data.get("ingredients")
+        ingredients_data = validated_data.pop("ingredients")
         ingredients = (
-            IngredientAmount.objects.get_or_create(
+            IngredientAmount.objects.create(
                 ingredient=ingredient,
                 amount=amount)
             for ingredient, amount in ingredients_data

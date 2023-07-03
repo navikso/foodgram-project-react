@@ -12,7 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from api.permissions import (
-    BlockPermission, RecipeObjectPermission, RecipePermission
+    BlockPermission, RecipeObjectPermission, RecipePermission,
+    UserPermission
 )
 from api.serializers import (
     FavoriteSerializer, IngredientSerializer,
@@ -95,7 +96,6 @@ class RecipeViewSet(ModelViewSet):
                     ).recipes.filter(id=OuterRef("id"))
                 )
             )
-            return None
         return recipes
 
     @action(
@@ -237,7 +237,7 @@ class TokenViewSet(ModelViewSet):
     @action(
         methods=("post",),
         detail=False,
-        permission_classes=[IsAuthenticated, ]
+        permission_classes=(IsAuthenticated, )
     )
     def logout(self, request):
         get_object_or_404(Token, user=request.user).delete()
@@ -248,7 +248,7 @@ class UserViewSet(ModelViewSet):
     pagination_class = PageNumberPagination
     serializer_class = UserSerializer
     queryset = User.objects.all()
-    permission_classes = (BlockPermission, IsAuthenticated)
+    permission_classes = (BlockPermission, UserPermission)
 
     @action(
         methods=("post",),
@@ -262,7 +262,7 @@ class UserViewSet(ModelViewSet):
             }
         )
         serializer.is_valid(raise_exception=True)
-        request.user.password = request.data["new_password"]
+        request.user.set_password(request.data["new_password"])
         request.user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -277,9 +277,9 @@ class UserViewSet(ModelViewSet):
         )
 
     def create(self, request, *args, **kwargs):
-        serializer = UserSerializer(data=request.data)
+        serializer = UserSmallSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = User.objects.create(
+        user = User.objects.create_user(
             email=request.data["email"],
             username=request.data["username"],
             first_name=request.data["first_name"],
@@ -324,7 +324,7 @@ class UserViewSet(ModelViewSet):
     )
     def subscribe(self, request, pk=None):
         user = get_object_or_404(User, pk=pk)
-        subscription = Subscription.objects.get(user=self.request.user)
+        subscription = get_object_or_404(Subscription, user=self.request.user)
         if request.method == "POST":
             serializer = SubscriptionUserSerializer(
                 data=request.data,

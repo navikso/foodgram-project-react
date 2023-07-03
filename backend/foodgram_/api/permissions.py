@@ -11,7 +11,9 @@ class BlockPermission(permissions.BasePermission):
 class RecipePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if request.method not in SAFE_METHODS:
+        if request.method not in SAFE_METHODS or (
+            view.action == "download_shopping_cart"
+        ):
             return request.user.is_authenticated
         return True
 
@@ -27,13 +29,9 @@ class RecipeObjectPermission(permissions.BasePermission):
 class UserPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if request.method.lower() == "get" and view.action == ("me",):
-            return request.user.is_authenticated
-        if view.action == [
-            "set_password",
-            "subscriptions",
-            "subscribe"
-        ]:
+        if view.action in (
+            "set_password", "subscriptions", "subscribe", "me"
+        ):
             return request.user.is_authenticated
         return True
 

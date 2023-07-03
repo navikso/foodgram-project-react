@@ -25,6 +25,9 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = (
         "name",
     )
+    search_fields = (
+        "name",
+    )
 
 
 @admin.register(IngredientAmount)
@@ -53,6 +56,12 @@ class RecipeAdmin(admin.ModelAdmin):
         "tags"
     )
 
+    search_fields = (
+        "name",
+        "author",
+        "tags"
+    )
+
     readonly_fields = (
         "favorite_count",
         "created_at"
@@ -75,7 +84,7 @@ class RecipeAdmin(admin.ModelAdmin):
     )
 
     def favorite_count(self, instance):
-        return instance.recipes_favorites.count()
+        return instance.list_recipes_favorites.count()
 
     favorite_count.short_description = "Добавили в избранное"
 
@@ -125,6 +134,12 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = (
         "email",
         "first_name"
+    )
+
+    search_fields = (
+        "email",
+        "first_name",
+        "last_name"
     )
 
     change_list_template = "admin/users.html"

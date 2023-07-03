@@ -20,6 +20,8 @@ class User(AbstractUser):
         auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(
         auto_now=True, verbose_name="Дата обновления")
+    first_name = models.CharField(max_length=255, verbose_name="Имя")
+    last_name = models.CharField(max_length=255, verbose_name="Фамилия")
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = []
