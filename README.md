@@ -1,7 +1,3 @@
-# workflow-status
-
-[![build-test](https://github.com/navikso/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/navikso/foodgram-project-react/actions/workflows/main.yml)
-
 # «Продуктовый помощник» 
 
 #### _Описание_
